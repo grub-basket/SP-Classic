@@ -559,6 +559,8 @@ export class StashpadFolderPanelView extends ItemView {
     menu.addSeparator();
     menu.addItem((i) => i.setTitle("Rename…").setIcon("pencil")
       .onClick(() => this.renameFolder(folder)));
+    /* SP-Classic: encryption disabled — folder encrypt/unlock, archive-folder, and
+       open-encrypted-trash context-menu items removed.
     // Encryption (Phase 3): lock every top-level note in the folder into separate
     // .stashenc bundles, or unlock them all back. Only when encryption is set up.
     if (this.plugin.encryption?.isConfigured?.()) {
@@ -612,6 +614,7 @@ export class StashpadFolderPanelView extends ItemView {
       menu.addItem((i) => i.setTitle("Open encrypted trash").setIcon("rotate-ccw")
         .onClick(() => this.plugin.openEncryptedTrash()));
     }
+    */
     menu.addSeparator();
     menu.addItem((i) => {
       i.setTitle("Delete folder…").setIcon("trash").onClick(() => this.deleteFolder(folder));

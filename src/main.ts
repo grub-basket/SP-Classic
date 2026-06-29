@@ -1012,6 +1012,7 @@ export default class StashpadPlugin extends Plugin {
       name: "Focus folder panel",
       callback: () => void this.focusFolderPanel(),
     });
+    /* SP-Classic: encryption disabled — "Lock encryption (forget password)" removed.
     // 0.97.2: forget the in-memory encryption key (re-prompt on next use). The
     // explicit alternative to background auto-relock.
     this.addCommand({
@@ -1023,6 +1024,7 @@ export default class StashpadPlugin extends Plugin {
         new Notice("Encryption locked.");
       },
     });
+    */
 
     const call = (method: string) => {
       const v = getActiveView();
@@ -1039,6 +1041,7 @@ export default class StashpadPlugin extends Plugin {
       name: "Command palette (Stashpad only)",
       callback: () => call("openStashpadCommandPalette"),
     });
+    /* SP-Classic: encryption disabled — lock/unlock commands removed.
     this.addCommand({
       id: "stashpad-lock-selection",
       name: "Encrypt (lock) selection (notes + children)",
@@ -1054,6 +1057,7 @@ export default class StashpadPlugin extends Plugin {
       name: "Decrypt (unlock) ALL locked notes in the vault",
       callback: () => void this.unlockAllInVault(),
     });
+    */
     // 0.99.0: note clipboard — copy/cut/paste of note blocks.
     this.addCommand({
       id: "stashpad-copy-notes",
@@ -1070,6 +1074,8 @@ export default class StashpadPlugin extends Plugin {
       name: "Paste notes (from the note clipboard)",
       callback: () => call("cmdPasteNotes"),
     });
+    /* SP-Classic: encryption disabled — archive-encrypt, encrypt-delete, and
+       encrypted-trash commands removed.
     this.addCommand({
       id: "stashpad-move-to-archive",
       name: "Move selection to archive (encrypt)",
@@ -1092,6 +1098,7 @@ export default class StashpadPlugin extends Plugin {
       name: "Encrypt existing Obsidian trash (backfill .trash into encrypted trash)",
       callback: () => void this.encryptExistingTrash(),
     });
+    */
     this.addCommand({
       id: "stashpad-close-duplicate-tabs",
       name: "Close duplicate & orphaned Stashpad tabs (tidy up)",
@@ -1774,12 +1781,14 @@ export default class StashpadPlugin extends Plugin {
       if (file instanceof TFile) this.maybeReHomeOnCrossFolderMove(file, oldPath);
     }));
 
+    /* SP-Classic: encryption disabled — auto-encrypt-on-move-into-archive-folder removed.
     // 0.98.25 (Phase 4): archive folders — a note MOVED into a marked folder is
     // auto-encrypted after a settle window. Move-in only (rename event), never
     // create/edit, so a note being written can't be locked out from under you.
     this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
       if (file instanceof TFile) this.maybeArchiveOnMoveIn(file, oldPath);
     }));
+    */
 
     // 0.79.1: auto-import — any file appearing directly in a Stashpad
     // folder root (not a reserved subfolder, not an existing note) gets

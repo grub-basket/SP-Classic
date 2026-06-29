@@ -9707,6 +9707,7 @@ export class StashpadView extends ItemView {
         void this.cmdExportOkf();
       }));
     }
+    /* SP-Classic: encryption disabled — "Encrypt (lock) note + children" note-menu item removed.
     // 0.98.1: encrypt (lock) this note + its whole subtree into one .stashenc
     // bundle, in place. Only shown once a vault encryption password is set up.
     if (this.plugin.encryption?.isConfigured?.()) {
@@ -9720,6 +9721,7 @@ export class StashpadView extends ItemView {
         if (r) this.render();
       }));
     }
+    */
     menu.addSeparator();
     menu.addItem((it: any) => it.setTitle("Move to…").setIcon("move").onClick(() => this.cmdMovePicker()));
     menu.addItem((it: any) => it.setTitle("Move to Home").setIcon("home").onClick(async () => {

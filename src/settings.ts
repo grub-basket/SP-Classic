@@ -133,10 +133,12 @@ export const COMMAND_META: CommandMeta[] = [
   { id: "jumpToTop",       label: "Jump to top of list",           desc: "Default: Home — move the cursor to the first note in the current list.", defaultPrimary: "Home" },
   { id: "jumpToBottom",    label: "Jump to bottom of list",        desc: "Default: End — move the cursor to the last note in the current list.", defaultPrimary: "End" },
   { id: "commandPalette",  label: "Command palette (Stashpad only)", desc: "Default: Mod+K — open a command palette listing only Stashpad's commands, with Sift search.", defaultPrimary: "Mod+K" },
+  /* SP-Classic: encryption disabled — lock/unlock/archive/encrypt-delete keybinds removed.
   { id: "lockSelection",   label: "Encrypt (lock) selection",      desc: "Encrypt the selected note(s) + their children into a locked .stashenc bundle in place (prompts to unlock first if needed). No default chord.", defaultPrimary: "" },
   { id: "unlockAll",       label: "Decrypt (unlock) locked notes in view", desc: "Decrypt every locked stash shown in the current view back into place, skipping any that can't be read. No default chord.", defaultPrimary: "" },
   { id: "moveToArchive",   label: "Move selection to archive (encrypt)", desc: "Move the selected note(s) to the default archive folder, encrypted on arrival. Undoable. No default chord.", defaultPrimary: "" },
   { id: "encryptDelete",   label: "Encrypt & delete selection",     desc: "Send the selected note(s) to the encrypted trash (recoverable with your password, Ctrl/Cmd+Z undoable). No default chord.", defaultPrimary: "" },
+  */
   { id: "copyNotes",       label: "Copy notes (note clipboard)",    desc: "Copy the selected note(s) as NOTES: paste in the list to duplicate them (new ids), or anywhere else to paste their text. Skipped when text is highlighted (normal copy wins).", defaultPrimary: "Mod+C" },
   { id: "cutNotes",        label: "Cut notes",                      desc: "Cut the selected note(s): paste in the list to MOVE them, or in the composer to extract their text and delete the originals (undoable).", defaultPrimary: "Mod+X" },
   { id: "pasteNotes",      label: "Paste notes",                    desc: "Paste previously copied/cut notes at the cursor row (after it, same parent). Does nothing if the note clipboard is empty.", defaultPrimary: "Mod+V" },
@@ -566,7 +568,8 @@ export function getTemplatesFormats(app: App): { dateFormat: string; timeFormat:
 export type SettingsTabId = "general" | "encryption" | "diagnostics" | "authorship" | "templates" | "jdindex" | "okf" | "hotkeys";
 export const SETTINGS_TABS: Array<{ id: SettingsTabId; label: string }> = [
   { id: "general",     label: "General" },
-  { id: "encryption",  label: "Encryption" },
+  // SP-Classic: encryption disabled — Encryption settings tab hidden.
+  // { id: "encryption",  label: "Encryption" },
   { id: "diagnostics", label: "Diagnostics" },
   { id: "authorship",  label: "Authorship" },
   { id: "templates",   label: "Templates" },
@@ -670,7 +673,8 @@ export class StashpadSettingTab extends PluginSettingTab {
       case "hotkeys": return this.hotkeyItems();
       case "diagnostics": return this.diagnosticsItems();
       case "general": return this.generalItems();
-      case "encryption": return this.encryptionItems();
+      // SP-Classic: encryption disabled — tab hidden; sever any stale deep-link.
+      case "encryption": return [];
       // 0.99.15: authorship/templates/jdindex decomposed too — static fields as
       // per-setting items, the per-folder editors as sectionDefs (rendered fresh
       // at display) — so individual settings are searchable, not just page names.
