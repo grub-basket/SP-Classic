@@ -349,7 +349,7 @@ export function buildFileActions(
       // at which point the previous reveal has long been overwritten.
       const leaf = app.workspace.getLeavesOfType("file-explorer")[0];
       if (!leaf) return;
-      app.workspace.revealLeaf(leaf);
+      (app.workspace as any).revealLeaf(leaf);
       const fe = leaf.view as any;
       fe?.revealInFolder?.(file);
     },

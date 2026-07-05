@@ -1,7 +1,7 @@
 import {
   App, ItemView, MarkdownRenderer, Menu, Notice, Platform,
   Scope, SuggestModal, TFile, TFolder, WorkspaceLeaf, debounce,
-  moment, setIcon,
+  moment, sanitizeHTMLToDom, setIcon,
 } from "obsidian";
 import {
   ROOT_ID, STASHPAD_VIEW_TYPE, RESERVED_FRONTMATTER, fmHasTag, fmAddTag, fmRemoveTag, parseAssignees, parseAuthorRef, attachmentLinkPath, toAttachmentLink,
@@ -4428,7 +4428,7 @@ export class StashpadView extends ItemView {
         // Mermaid/MathJax are the one weak spot — they won't re-execute from
         // cached HTML, but they're rare in chat-style notes and re-render on
         // the next mtime change anyway.)
-        textEl.append(document.createRange().createContextualFragment(html));
+        textEl.append(sanitizeHTMLToDom(html));
       }
       if (attachments.length > 0) this.renderAttachmentRail(container, attachments);
       // Multiplayer footer: author / contributors / last-edit. Each
@@ -6035,7 +6035,7 @@ export class StashpadView extends ItemView {
                 folderOverride: folder === settingsFolder ? null : folder,
               },
             });
-            ws.revealLeaf(leaf);
+            (ws as any).revealLeaf(leaf);
             // The freshly-mounted view rebuilt its tree during
             // setViewState. Reach into it to create the note + navigate.
             const newView = leaf.view as any;
@@ -7618,7 +7618,7 @@ export class StashpadView extends ItemView {
       },
     });
     ws.setActiveLeaf(leaf, { focus: true } as any);
-    ws.revealLeaf(leaf);
+    (ws as any).revealLeaf(leaf);
     // 0.57.5: same return-to-origin one-shot as openFolderInNewTab /
     // openFileAtEnd — when this spawned tab closes, the originating
     // Stashpad tab regains focus.
@@ -7637,7 +7637,7 @@ export class StashpadView extends ItemView {
       })();
       if (originStillOpen) {
         ws.setActiveLeaf(originLeaf, { focus: true } as any);
-        ws.revealLeaf(originLeaf);
+        (ws as any).revealLeaf(originLeaf);
       }
     });
   }
@@ -7669,7 +7669,7 @@ export class StashpadView extends ItemView {
       },
     });
     ws.setActiveLeaf(leaf, { focus: true } as any);
-    ws.revealLeaf(leaf);
+    (ws as any).revealLeaf(leaf);
   }
 
   private async openFolderInNewTab(folder: string): Promise<void> {
@@ -7690,7 +7690,7 @@ export class StashpadView extends ItemView {
       },
     });
     ws.setActiveLeaf(leaf, { focus: true } as any);
-    ws.revealLeaf(leaf);
+    (ws as any).revealLeaf(leaf);
 
     // One-shot: when the spawned leaf closes, restore focus to the
     // originating Stashpad tab.
@@ -7709,7 +7709,7 @@ export class StashpadView extends ItemView {
       })();
       if (originStillOpen) {
         ws.setActiveLeaf(originLeaf, { focus: true } as any);
-        ws.revealLeaf(originLeaf);
+        (ws as any).revealLeaf(originLeaf);
       }
     });
   }
@@ -7751,7 +7751,7 @@ export class StashpadView extends ItemView {
     const leaf = ws.getLeaf("tab");
     await leaf.openFile(file, { active: true });
     ws.setActiveLeaf(leaf, { focus: true } as any);
-    ws.revealLeaf(leaf);
+    (ws as any).revealLeaf(leaf);
 
     // One-shot listener: when the active leaf changes AND our edit leaf is
     // no longer in the workspace (closed), reveal the originating Stashpad
@@ -7773,7 +7773,7 @@ export class StashpadView extends ItemView {
       })();
       if (originStillOpen) {
         ws.setActiveLeaf(originLeaf, { focus: true } as any);
-        ws.revealLeaf(originLeaf);
+        (ws as any).revealLeaf(originLeaf);
       }
     });
 
@@ -9548,7 +9548,7 @@ export class StashpadView extends ItemView {
   /** public: called by AuthorshipTracker (the host interface). */
   stripFrontmatter(md: string): string {
     // Strip BOM if present so the opening-fence detection still works.
-    const text = md.replace(/^﻿/, "");
+    const text = md.replace(/^\uFEFF/, "");
     // Match: optional leading whitespace, "---", newline, anything (lazy),
     // newline, "---", optional trailing whitespace, then either a newline
     // or end-of-string. This covers \r\n line endings, missing trailing

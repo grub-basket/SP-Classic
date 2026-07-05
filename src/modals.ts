@@ -671,7 +671,8 @@ export class ExportStashModal extends Modal {
     // re-importing on THIS device skips the prompt. Only offered when the API
     // exists (≥1.11.4); secrets are device-local, so recipients still need the
     // passphrase typed/copied.
-    const secretStorage = (this.app as App & { secretStorage?: SecretStorage }).secretStorage;
+    // SP-Classic: encryption shelved — keychain (secretStorage) access removed.
+    const secretStorage: unknown = undefined;
     const rememberRow = pwArea.createDiv({ cls: "stashpad-export-remember" });
     const rememberCb = rememberRow.createEl("input", { type: "checkbox" }) as HTMLInputElement;
     rememberCb.id = "stashpad-export-remember-cb";
@@ -998,7 +999,7 @@ export class EncryptionPasswordModal extends Modal {
 
     // Optional: remember in this device's keychain.
     let rememberCb: HTMLInputElement | null = null;
-    const secretStorage = (this.app as App & { secretStorage?: SecretStorage }).secretStorage;
+    const secretStorage: unknown = undefined; // SP-Classic: keychain removed
     if (this.opts.offerKeychain && secretStorage) {
       const row = this.contentEl.createDiv({ cls: "stashpad-export-remember" });
       rememberCb = row.createEl("input", { type: "checkbox" }) as HTMLInputElement;

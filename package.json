@@ -1,17 +1,21 @@
 {
   "name": "stashpad-classic",
-  "version": "0.102.16",
+  "version": "0.102.17",
   "private": true,
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",
     "deploy:files": "node scripts/deploy.mjs",
     "deploy": "pnpm run build && node scripts/deploy.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint:api": "eslint \"src/**/*.ts\""
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@typescript-eslint/parser": "^8.62.1",
     "esbuild": "^0.21.0",
+    "eslint": "^10.6.0",
+    "eslint-plugin-obsidianmd": "^0.4.1",
     "obsidian": "latest",
     "typescript": "^5.4.0"
   },

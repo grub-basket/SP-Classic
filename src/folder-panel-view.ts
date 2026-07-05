@@ -535,7 +535,7 @@ export class StashpadFolderPanelView extends ItemView {
     if (!(tf instanceof TFolder)) { new Notice("Couldn't find that folder."); return; }
     const leaf = this.app.workspace.getLeavesOfType("file-explorer")[0];
     if (!leaf) { new Notice("File explorer isn't available."); return; }
-    this.app.workspace.revealLeaf(leaf);
+    (this.app.workspace as any).revealLeaf(leaf);
     (leaf.view as any)?.revealInFolder?.(tf);
   }
 
@@ -700,9 +700,9 @@ class RenameFolderModal extends Modal {
 /** Open the folder panel in the LEFT sidebar (reuse if already open). */
 export async function openFolderPanelView(app: App): Promise<void> {
   const existing = app.workspace.getLeavesOfType(STASHPAD_FOLDER_PANEL_VIEW_TYPE);
-  if (existing.length > 0) { app.workspace.revealLeaf(existing[0]); return; }
+  if (existing.length > 0) { (app.workspace as any).revealLeaf(existing[0]); return; }
   const leaf = app.workspace.getLeftLeaf(false);
   if (!leaf) { new Notice("Stashpad: couldn't open the folder panel."); return; }
   await leaf.setViewState({ type: STASHPAD_FOLDER_PANEL_VIEW_TYPE, active: true });
-  app.workspace.revealLeaf(leaf);
+  (app.workspace as any).revealLeaf(leaf);
 }

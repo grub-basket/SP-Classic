@@ -94,7 +94,7 @@ async function runExport(view: StashpadView, roots: TreeNode[], all: TreeNode[],
     // this device can look it up. Best-effort — a keychain failure must not
     // fail the export (the file is already written + encrypted).
     if (remember && password) {
-      const ss = (view.app as { secretStorage?: { setSecret(id: string, v: string): void } }).secretStorage;
+      const ss: any = undefined; // SP-Classic: keychain removed
       try { ss?.setSecret(secretIdForStashName(outBase), password); }
       catch (e) { console.warn("[Stashpad] couldn't save export passphrase to secret storage", e); }
     }

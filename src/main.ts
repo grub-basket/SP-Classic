@@ -2788,7 +2788,7 @@ export default class StashpadPlugin extends Plugin {
       async onChooseSuggestion(item: Item): Promise<void> {
         if (item.kind === "trash") { plugin.openEncryptedTrash(); return; }
         if (item.kind === "reveal") {
-          plugin.app.workspace.revealLeaf(item.leaf);
+          (plugin.app.workspace as any).revealLeaf(item.leaf);
           return;
         }
         if (item.kind === "open" || item.kind === "open-anyway") {
@@ -2800,7 +2800,7 @@ export default class StashpadPlugin extends Plugin {
           const v = activeView as any;
           if (v && typeof v.setFolderOverride === "function") {
             await v.setFolderOverride(item.folder);
-            plugin.app.workspace.revealLeaf(v.leaf);
+            (plugin.app.workspace as any).revealLeaf(v.leaf);
           }
           return;
         }
@@ -2888,7 +2888,7 @@ export default class StashpadPlugin extends Plugin {
     });
     // The view's onOpen path will detect tinyMode and apply the window
     // shrink + always-on-top. Reveal to be safe.
-    try { this.app.workspace.revealLeaf(popLeaf); } catch {}
+    try { (this.app.workspace as any).revealLeaf(popLeaf); } catch {}
   }
 
   async activateView(opts: { reveal: boolean } = { reveal: true }): Promise<void> {
@@ -2896,13 +2896,13 @@ export default class StashpadPlugin extends Plugin {
     if (opts.reveal) {
       const existing = workspace.getLeavesOfType(STASHPAD_VIEW_TYPE);
       if (existing.length > 0) {
-        workspace.revealLeaf(existing[0]);
+        (workspace as any).revealLeaf(existing[0]);
         return;
       }
     }
     const leaf = workspace.getLeaf("tab");
     await leaf.setViewState({ type: STASHPAD_VIEW_TYPE, active: true });
-    workspace.revealLeaf(leaf);
+    (workspace as any).revealLeaf(leaf);
   }
 
   /** 0.95.3: snap focus to the Stashpad tab you were last working in — the
@@ -2916,7 +2916,7 @@ export default class StashpadPlugin extends Plugin {
       ? this.lastActiveStashpadLeaf
       : leaves[0] ?? null;
     if (!leaf) { await this.activateView({ reveal: true }); return; }
-    ws.revealLeaf(leaf);
+    (ws as any).revealLeaf(leaf);
     ws.setActiveLeaf(leaf, { focus: true });
   }
 
@@ -3781,7 +3781,7 @@ export default class StashpadPlugin extends Plugin {
       active: true,
       state: { folderOverride: cleaned } as any,
     });
-    this.app.workspace.revealLeaf(leaf);
+    (this.app.workspace as any).revealLeaf(leaf);
     return leaf;
   }
 
@@ -3801,7 +3801,7 @@ export default class StashpadPlugin extends Plugin {
     if (!cleaned) return;
     const existing = await this.findStashpadLeafForFolder(cleaned);
     if (existing) {
-      this.app.workspace.revealLeaf(existing);
+      (this.app.workspace as any).revealLeaf(existing);
       this.app.workspace.setActiveLeaf(existing, { focus: true });
       return;
     }
@@ -3860,7 +3860,7 @@ export default class StashpadPlugin extends Plugin {
     const clean = folder.replace(/\/+$/, "");
     const existing = await this.findStashpadLeafForFolder(clean);
     if (existing) {
-      this.app.workspace.revealLeaf(existing);
+      (this.app.workspace as any).revealLeaf(existing);
       // Focus follows the click — revealLeaf alone leaves the old tab active.
       this.app.workspace.setActiveLeaf(existing, { focus: true });
       this.navigateLeafTo(existing, clean, id);

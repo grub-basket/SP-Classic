@@ -517,14 +517,14 @@ export class StashpadPanelsView extends ItemView {
   private async resolveTargetStashpad(): Promise<any | null> {
     const mru = this.plugin.lastActiveStashpadLeaf;
     if (mru && mru.view.getViewType() === STASHPAD_VIEW_TYPE) {
-      this.app.workspace.revealLeaf(mru);
+      (this.app.workspace as any).revealLeaf(mru);
       return mru.view;
     }
     const active = this.findActiveStashpad();
     if (active) return active;
     const leaves = this.app.workspace.getLeavesOfType(STASHPAD_VIEW_TYPE);
     if (leaves.length > 0) {
-      this.app.workspace.revealLeaf(leaves[0]);
+      (this.app.workspace as any).revealLeaf(leaves[0]);
       return leaves[0].view;
     }
     await this.plugin.activateView({ reveal: true });
@@ -1091,7 +1091,7 @@ export class StashpadPanelsView extends ItemView {
 export async function openStashpadPanelsView(app: App): Promise<void> {
   const existing = app.workspace.getLeavesOfType(STASHPAD_PANELS_VIEW_TYPE);
   if (existing.length > 0) {
-    app.workspace.revealLeaf(existing[0]);
+    (app.workspace as any).revealLeaf(existing[0]);
     return;
   }
   const leaf = app.workspace.getLeftLeaf(false);
@@ -1100,5 +1100,5 @@ export async function openStashpadPanelsView(app: App): Promise<void> {
     return;
   }
   await leaf.setViewState({ type: STASHPAD_PANELS_VIEW_TYPE, active: true });
-  app.workspace.revealLeaf(leaf);
+  (app.workspace as any).revealLeaf(leaf);
 }

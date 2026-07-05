@@ -102,7 +102,7 @@ export class EncryptionService {
 
   // ---- keychain (per-device convenience copy of the unlock password) ----
   private secretStore(): SecretStore | null {
-    return (this.app as App & { secretStorage?: SecretStore }).secretStorage ?? null;
+    return null; // SP-Classic: encryption shelved — keychain (secretStorage) access removed.
   }
   keychainAvailable(): boolean { return !!this.secretStore(); }
   private keychainId(): string {

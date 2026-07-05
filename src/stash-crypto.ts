@@ -287,7 +287,7 @@ export async function resolveStashBytes(
   // through the SAME decryptStash path — no bypass of the zip-slip / collision
   // guards downstream. A stored-but-wrong secret just falls through to prompt.
   if (opts.secretId) {
-    const ss = (app as App & { secretStorage?: { getSecret(id: string): string | null } }).secretStorage;
+    const ss: any = undefined; // SP-Classic: keychain removed
     let stored: string | null = null;
     try { stored = ss?.getSecret(opts.secretId) ?? null; } catch { stored = null; }
     if (stored) {

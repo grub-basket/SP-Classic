@@ -513,7 +513,7 @@ export class StashpadDetailView extends ItemView {
 export async function openStashpadDetailView(app: App): Promise<void> {
   const existing = app.workspace.getLeavesOfType(STASHPAD_DETAIL_VIEW_TYPE);
   if (existing.length > 0) {
-    app.workspace.revealLeaf(existing[0]);
+    (app.workspace as any).revealLeaf(existing[0]);
     return;
   }
   const leaf = app.workspace.getRightLeaf(false);
@@ -522,5 +522,5 @@ export async function openStashpadDetailView(app: App): Promise<void> {
     return;
   }
   await leaf.setViewState({ type: STASHPAD_DETAIL_VIEW_TYPE, active: true });
-  app.workspace.revealLeaf(leaf);
+  (app.workspace as any).revealLeaf(leaf);
 }

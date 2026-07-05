@@ -105,8 +105,8 @@ export class StashpadTrashView extends ItemView {
 export async function openTrashView(plugin: StashpadPlugin): Promise<void> {
   const { workspace } = plugin.app;
   const existing = workspace.getLeavesOfType(STASHPAD_TRASH_VIEW_TYPE);
-  if (existing.length > 0) { workspace.revealLeaf(existing[0]); return; }
+  if (existing.length > 0) { (workspace as any).revealLeaf(existing[0]); return; }
   const leaf = workspace.getLeaf("tab");
   await leaf.setViewState({ type: STASHPAD_TRASH_VIEW_TYPE, active: true });
-  workspace.revealLeaf(leaf);
+  (workspace as any).revealLeaf(leaf);
 }
