@@ -18,10 +18,14 @@ LLMs and agents.
 
 ## Install
 
-Stashpad is on the [Obsidian community store](https://community.obsidian.md/plugins/stashpad). Requires Obsidian **1.13.0+** (desktop or mobile).
+Requires Obsidian **1.7.0+** (desktop or mobile) — it runs on the current stable
+Obsidian, no insider build needed.
 
-1. Open **Settings → Community plugins → Browse** and search for **Stashpad** (or use the [store page](https://community.obsidian.md/plugins/stashpad)).
-2. Install, then enable **Stashpad**.
+Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat): add the beta plugin
+`grub-basket/SP-Classic`. Or download `main.js`, `manifest.json`, and `styles.css`
+from the [latest release](https://github.com/grub-basket/SP-Classic/releases/latest)
+into `.obsidian/plugins/stashpad-classic/` in your vault, then enable **Stashpad
+Classic** in **Settings → Community plugins**.
 
 **Via BRAT (optional).** You can also install through [BRAT](https://obsidian.md/plugins?id=obsidian42-brat) ([GitHub](https://github.com/TfTHacker/obsidian42-brat)): choose "Add beta plugin" and paste `https://github.com/grub-basket/SP`. BRAT lets you pin a specific version, which is handy for downgrading or grabbing a fix before it reaches the store.
 
