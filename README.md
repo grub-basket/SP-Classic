@@ -51,8 +51,8 @@ Stashpad is on the [Obsidian community store](https://community.obsidian.md/plug
 - **Tiny mode** — pop Stashpad into a small, pinnable, opacity-adjustable window for
   quick capture while you work elsewhere.
 - **Folder panel** — sidebar of your Stashpad folders and pinned notes/folders.
-- **Import / export** — `.stash` bundles (optionally encrypted) round-trip notes +
-  attachments; dropped files auto-import.
+- **Import / export** — `.stash` bundles round-trip notes + attachments; dropped
+  files auto-import.
 - **Authorship / multiplayer** — stamp notes with your name; shared vaults track
   contributors, with a vault-wide author registry.
 - **Johnny.Decimal index** — build a JD-style hierarchy from dotted-prefix titles.
@@ -74,19 +74,16 @@ and a real hierarchy, so it can produce OKF bundles for you:
 
 See [`docs/okf-guide.md`](docs/okf-guide.md) for a from-scratch walkthrough.
 
-## Encryption (optional, beta)
+## Encryption — not included
 
-Stashpad can lock notes/folders into encrypted `.stashenc` files, with archive folders,
-encrypted trash, and shared-key collaboration.
-
-> 🔒 **Please read:** the encryption was written by an AI assistant and has **not**
-> been human-audited or security-tested. Treat it as a best-effort way to deter a
-> casual snoop, **not** a guarantee. Don't rely on it for anything sensitive, and keep
-> unencrypted backups. It's optional and off by default.
+Stashpad Classic **does not have encryption.** Mainline Stashpad's note/folder
+encryption (encrypted `.stashenc` files, archive folders, encrypted trash, shared-key
+collaboration) is removed from the Classic build — it relied on newer, insider-only
+Obsidian APIs, and dropping it is part of what lets Classic run on stable Obsidian.
 
 ## Feedback
 
-Report anything buggy or strange on the [issues](https://github.com/grub-basket/SP/issues) tab.
+Report anything buggy or strange on the [issues](https://github.com/grub-basket/SP-Classic/issues) tab.
 
 ## Credits & thanks
 
