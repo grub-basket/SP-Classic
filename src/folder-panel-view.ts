@@ -141,6 +141,10 @@ export class StashpadFolderPanelView extends ItemView {
   /** Pin subtree expansion state (key = `folder|id`), kept across re-renders. */
   private pinExpanded = new Set<string>();
 
+  /** 0.105.1 (ported): which folder rows are expanded to reveal their Home
+   *  list-pinned notes (key = folder path), kept across re-renders. */
+  private folderPinExpanded = new Set<string>();
+
   private openPinnedOptionsMenu(e: MouseEvent): void {
     const cur = this.plugin.settings.folderPanelPinnedGrouping ?? "pin-order";
     const menu = new Menu();
@@ -478,6 +482,25 @@ export class StashpadFolderPanelView extends ItemView {
       pin.setAttr("aria-label", "Pinned");
     }
 
+    // 0.105.1 (ported): reveal this folder's Home list-pinned notes inline. The
+    // chevron shows only when the folder has any; clicking toggles a sub-list
+    // below the row. stopPropagation so it doesn't trigger folder navigation.
+    const homePinned = this.folderHomePinnedNotes(folder);
+    const pinKey = StashpadFolderPanelView.clean(folder);
+    const pinsExpanded = this.folderPinExpanded.has(pinKey);
+    if (homePinned.length > 0) {
+      const chev = row.createSpan({ cls: "stashpad-folderpanel-pinreveal" });
+      renderCountBadge(chev, homePinned.length, pinsExpanded);
+      chev.setAttr("aria-label", pinsExpanded ? "Hide pinned notes" : `${homePinned.length} pinned note${homePinned.length === 1 ? "" : "s"}`);
+      chev.addEventListener("mousedown", (e) => { e.stopPropagation(); e.preventDefault(); });
+      chev.onclick = (e) => {
+        e.stopPropagation();
+        if (this.folderPinExpanded.has(pinKey)) this.folderPinExpanded.delete(pinKey);
+        else this.folderPinExpanded.add(pinKey);
+        this.render();
+      };
+    }
+
     // 0.95.1: per-folder icon. Tinted by the folder's Home-note color when set.
     // 0.98.37: archive folders show the ARCHIVE icon in place of the folder icon
     // (one icon instead of folder + a separate badge).
@@ -517,6 +540,28 @@ export class StashpadFolderPanelView extends ItemView {
       this.onNavigateAway(); this.jumpToFolder(folder);
     });
     row.oncontextmenu = (e) => { e.preventDefault(); this.openFolderMenu(e, folder); };
+
+    // 0.105.1 (ported): when expanded, list the folder's Home list-pinned notes
+    // as a sub-list below the folder row. Clicking one reveals it in its Stashpad.
+    if (homePinned.length > 0 && pinsExpanded) {
+      const box = list.createDiv({ cls: "stashpad-folderpanel-pinlist" });
+      for (const f of homePinned) {
+        const prow = box.createDiv({ cls: "stashpad-folderpanel-pinrow" });
+        const fmc = (this.app.metadataCache.getFileCache(f)?.frontmatter ?? {}) as any;
+        const pic = prow.createSpan({ cls: "stashpad-folderpanel-pinrow-icon" });
+        setIcon(pic, "arrow-up-to-line");
+        if (typeof fmc.color === "string") pic.style.color = fmc.color;
+        prow.createSpan({ cls: "stashpad-folderpanel-pinrow-label", text: this.titleFromFile(f) });
+        prow.onclick = () => { this.onNavigateAway(); void this.plugin.revealNoteInStashpad(f); };
+      }
+    }
+  }
+
+  /** 0.105.1 (ported): a folder's ROOT-level (Home) list-pinned notes — backs the
+   *  folder-panel reveal. Reuses childrenOf(folder, ROOT_ID) + listPinned frontmatter. */
+  private folderHomePinnedNotes(folder: string): TFile[] {
+    return this.childrenOf(folder, ROOT_ID).filter((f) =>
+      (this.app.metadataCache.getFileCache(f)?.frontmatter as any)?.listPinned === true);
   }
 
   /** Collapsible "Hidden (N)" group at the bottom of the Folders list, so hidden

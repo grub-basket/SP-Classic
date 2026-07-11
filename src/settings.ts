@@ -170,6 +170,10 @@ export interface StashpadSettings {
    *  honor Obsidian's "Excluded files" (userIgnoreFilters), so exclusions
    *  are managed in one place. `.edtz` is always excluded regardless. */
   inheritObsidianExclusions: boolean;
+  /** 0.118.3 (ported): when true, the folder switcher / creator modal also lists
+   *  pinned notes (jump straight to one). Off by default to keep the picker
+   *  focused on folders. */
+  folderSwitcherIncludePinned: boolean;
   /** 0.86.2: folder panel — fraction of height given to the Pinned section
    *  (the rest goes to Folders). Set by dragging the divider. 0.15–0.85. */
   folderPanelPinnedFraction: number;
@@ -466,6 +470,7 @@ export const DEFAULT_SETTINGS: StashpadSettings = {
   exportFolder: "_exports",
   autoImport: false,
   inheritObsidianExclusions: true,
+  folderSwitcherIncludePinned: false,
   folderPanelPinnedFraction: 0.5,
   folderPanelPinned: [],
   folderPanelDownranked: [],
@@ -863,6 +868,9 @@ export class StashpadSettingTab extends PluginSettingTab {
 
     items.push(toggle("Inherit Obsidian's excluded files", "Also hide files matching Obsidian's “Excluded files” list (Settings → Files & Links) from Stashpad's link autocomplete and file surfaces — so you manage exclusions in one place. Plugin-internal formats like .edtz are always excluded regardless.",
       () => this.plugin.settings.inheritObsidianExclusions, (v) => { this.plugin.settings.inheritObsidianExclusions = v; }, ["excluded", "ignore", "files"]));
+
+    items.push(toggle("Include pinned notes in the folder switcher", "When on, the folder switcher / creator (the folder button and the “Open or switch Stashpad folder” command) also lists your pinned notes, so you can jump straight to one. Off keeps the picker focused on folders.",
+      () => this.plugin.settings.folderSwitcherIncludePinned, (v) => { this.plugin.settings.folderSwitcherIncludePinned = v; }, ["pinned", "switcher", "folder", "picker", "jump"]));
 
     items.push(this.renderDef("Dedicated import subfolder (optional)", "Optional. A subfolder (relative to each Stashpad folder) where dropped .stash files auto-import. Leave blank to just drop files into the Stashpad folder itself (recommended). Suggested name: _imports.", (s) =>
       s.addText((t) => t.setValue(this.plugin.settings.importDropFolder).setPlaceholder("_imports (leave blank to use the folder root)").onChange(async (v) => {

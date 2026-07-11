@@ -2662,6 +2662,7 @@ export default class StashpadPlugin extends Plugin {
       | { kind: "switch-current"; folder: string; label: string; icon: string }
       | { kind: "create"; folder: string; label: string; icon: string }
       | { kind: "convert"; folder: string; label: string; icon: string }
+      | { kind: "pinned"; folder: string; label: string; icon: string; file: TFile }
       | { kind: "trash"; label: string; icon: string };
 
     const folderForLeaf = (leaf: WorkspaceLeaf): string => {
@@ -2731,6 +2732,20 @@ export default class StashpadPlugin extends Plugin {
       baseItems.push({ kind: "open", folder, label: `Open "${label}" in new tab`, icon: this.isArchiveFolder(folder) ? "archive" : "layout-template" });
     }
 
+    // 0.118.3 (ported): optionally surface pinned notes so the switcher can jump
+    // straight to one. Title from the filename (sync), same as the folder panel.
+    const titleFromFile = (f: TFile): string =>
+      f.basename.replace(/-[a-z0-9]{4,12}$/, "").replace(/-/g, " ").trim() || f.basename;
+    const pinnedItems: Item[] = this.settings.folderSwitcherIncludePinned
+      ? this.listPinnedNotes().map((p) => ({
+          kind: "pinned" as const,
+          folder: p.folder,
+          file: p.file,
+          label: titleFromFile(p.file),
+          icon: "pin",
+        }))
+      : [];
+
     const plugin = this;
     const modal = new (class extends SuggestModal<Item> {
       getSuggestions(query: string): Item[] {
@@ -2798,6 +2813,11 @@ export default class StashpadPlugin extends Plugin {
         // tab on the same folder (e.g., main + tiny side by side).
         const openAnywayFiltered = openAnywayItems.filter((it) => matchesAll(it.label) || matchesAll("folder" in it ? it.folder : ""));
         filtered.push(...openAnywayFiltered);
+        // 0.118.3 (ported): pinned-note jump targets (when enabled). Matched on
+        // title or folder; placed after the folder actions, before create/trash.
+        for (const it of pinnedItems) {
+          if (matchesAll(it.label) || matchesAll("folder" in it ? it.folder : "")) filtered.push(it);
+        }
         // 0.98.37: encrypted-trash entry, pinned to the very bottom. Only when
         // encryption is set up; matches on "trash"/"deleted"/"encrypted".
         if (plugin.encryption?.isConfigured?.() && matchesAll("trash deleted encrypted")) {
@@ -2819,6 +2839,7 @@ export default class StashpadPlugin extends Plugin {
       }
       async onChooseSuggestion(item: Item): Promise<void> {
         if (item.kind === "trash") { plugin.openEncryptedTrash(); return; }
+        if (item.kind === "pinned") { await plugin.revealNoteInStashpad(item.file); return; }
         if (item.kind === "reveal") {
           (plugin.app.workspace as any).revealLeaf(item.leaf);
           return;

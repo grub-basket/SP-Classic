@@ -5221,9 +5221,9 @@ export class StashpadView extends ItemView {
     const list = this.listEl;
     if (!list) return;
     const top = list.scrollTop;
-    list.style.overflowY = "hidden";
+    list.setCssStyles({ overflowY: "hidden" });
     void list.offsetHeight; // force synchronous reflow
-    list.style.overflowY = "scroll";
+    list.setCssStyles({ overflowY: "scroll" });
     list.scrollTop = top;
   }
 
