@@ -3874,6 +3874,9 @@ export class StashpadView extends ItemView {
 
     type Crumb = { id: StashpadId; label: string; isEllipsis?: boolean };
     const path = this.tree.pathTo(this.focusId);
+    // 0.149 (ported): warm body text for any crumb not cached yet so titleForNode
+    // shows the note's first line, not its filename slug (repaints once when ready).
+    this.warmCrumbTitles(path);
     const crumbs: Crumb[] = path.map((n) => {
       const raw = this.titleForNode(n);
       const label = raw.length > PER_CRUMB_MAX ? raw.slice(0, PER_CRUMB_MAX - 1) + "…" : raw;
@@ -4165,8 +4168,39 @@ export class StashpadView extends ItemView {
     if (!node.file) return "Untitled";
     const cache = this.app.metadataCache.getFileCache(node.file);
     const firstHeading = cache?.headings?.[0]?.heading;
-    if (firstHeading) return firstHeading;
+    if (firstHeading) return firstHeading.trim();
+    // 0.149 (ported): prefer the note's first body line (what the row / focused
+    // header shows) over the filename slug — a filename can be a short slug that
+    // doesn't match its content (e.g. `grand.md` whose body is "Grandchild under
+    // child A of Alpha."). The persisted render cache holds body text
+    // synchronously once a note has been shown; `warmCrumbTitles` (called from
+    // renderBreadcrumb) warms any crumb not cached yet. Falls back to the filename.
+    const bodyText = this.plugin.renderCacheStore.get(node.file.path)?.text;
+    const firstLine = bodyText?.slice(0, 200).split(/\r?\n/).map((s) => s.trim()).find(Boolean);
+    if (firstLine) return firstLine;
     return node.file.basename.replace(/-[a-z0-9]{4,12}$/, "").replace(/-/g, " ") || "Untitled";
+  }
+
+  /** 0.149 (ported): warm the render cache for breadcrumb nodes that have no
+   *  heading and no cached body yet (e.g. a jump straight to a note, before its
+   *  ancestors were ever shown), so titleForNode can use their body's first line
+   *  instead of the filename. Async + fire-once re-render; guarded against loops
+   *  by only re-rendering when something was actually warmed. */
+  private warmCrumbTitles(nodes: TreeNode[]): void {
+    const cold = nodes.filter((n) => {
+      if (!n.file) return false;
+      if (this.app.metadataCache.getFileCache(n.file)?.headings?.[0]?.heading) return false;
+      // Cold = no cache ENTRY at all. A cached-but-empty body (text === "")
+      // legitimately falls back to the filename, so don't re-warm it every paint.
+      return !this.plugin.renderCacheStore.get(n.file.path);
+    });
+    if (!cold.length) return;
+    void Promise.all(cold.map((n) => this.bodyRenderer.getOrComputeRender(n.file!).catch(() => null)))
+      .then((results) => {
+        // Only repaint if at least one warm produced usable text (avoids a
+        // render loop when a node genuinely has an empty body).
+        if (results.some((r) => r && r.text && r.text.trim())) this.debouncedRender();
+      });
   }
 
   /** Force a parent's sort mode back to "manual" after any operation that
