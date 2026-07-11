@@ -4705,8 +4705,20 @@ export default class StashpadPlugin extends Plugin {
       slugStopWords: Array.isArray(data?.slugStopWords)
         ? data.slugStopWords
         : [...DEFAULT_STOPWORDS],
+      migratedToggleTaskG: data?.migratedToggleTaskG === true,
     };
     setSettings(this.settings);
+    // 0.124.1 (ported): one-time migration of the "Toggle task" default H → G.
+    // Installs persist the FULL bindings map, so changing the default alone never
+    // reaches existing users. Flip a still-default `H` to `G` once, then mark it
+    // done so a later deliberate rebind to H sticks.
+    if (!this.settings.migratedToggleTaskG) {
+      if (this.settings.bindings.toggleTask?.primary === "H") {
+        this.settings.bindings.toggleTask.primary = "G";
+      }
+      this.settings.migratedToggleTaskG = true;
+      await this.saveSettings();
+    }
     // Sync the notification service's mute set from settings. Safe to
     // call before any toasts fire — the service no-ops on empty mute
     // sets. Cast through string[] → NotificationCategory[] since the

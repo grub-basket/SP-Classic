@@ -128,7 +128,7 @@ export const COMMAND_META: CommandMeta[] = [
   { id: "copyCodeBlock",   label: "Copy code from codeblock",      desc: "Default: { — copy the contents of the cursor row's first codeblock (or pick one when multiple exist).", defaultPrimary: "{" },
   { id: "swapWithParent",  label: "Swap with parent (ouroboros)",  desc: "Promote the cursor row above its current parent; the parent slides under it (carrying its other children). No default — bind in this tab.", defaultPrimary: "" },
   { id: "togglePin",       label: "Pin / unpin selected note",     desc: "Default: P — toggle the sidebar pin state of the cursor row (or focused note).", defaultPrimary: "P" },
-  { id: "toggleTask",      label: "Toggle task (todo)",            desc: "Default: H — mark the selection (or cursor row) as a task / todo, or clear it. Tasks appear in the Tasks panel.", defaultPrimary: "H" },
+  { id: "toggleTask",      label: "Toggle task (todo)",            desc: "Default: G — mark the selection (or cursor row) as a task / todo, or clear it. Tasks appear in the Tasks panel.", defaultPrimary: "G" },
   { id: "setDue",          label: "Set due date…",                 desc: "Default: D — open a date+time picker to set (or clear) the due date on the selection. Setting a due date also marks the note as a task.", defaultPrimary: "D" },
   { id: "jumpToTop",       label: "Jump to top of list",           desc: "Default: Home — move the cursor to the first note in the current list.", defaultPrimary: "Home" },
   { id: "jumpToBottom",    label: "Jump to bottom of list",        desc: "Default: End — move the cursor to the last note in the current list.", defaultPrimary: "End" },
@@ -245,6 +245,11 @@ export interface StashpadSettings {
    *  instead) so a glance at the vault doesn't reveal what's locked. Default OFF
    *  (titles shown). Global for now; per-folder/trash scoping is future work. */
   hideLockedTitles: boolean;
+  /** 0.124.1 (ported): one-time migration marker — the default "Toggle task"
+   *  hotkey changed from H to G. Existing installs persist the full bindings map,
+   *  so the default change alone wouldn't reach them; on first load we flip a
+   *  still-default `H` to `G` once, then set this so it never re-flips. */
+  migratedToggleTaskG: boolean;
   /** 0.98.25 (Phase 4): archive folders — notes MOVED into one of these Stashpad
    *  folders are automatically encrypted (locked). Opt-in per folder via the
    *  folder panel; requires an explicit confirm when marking (lock permanently
@@ -480,6 +485,7 @@ export const DEFAULT_SETTINGS: StashpadSettings = {
   encryptTrashFilenames: false,
   encryptionIdleLockMinutes: 0,
   hideLockedTitles: false,
+  migratedToggleTaskG: false,
   archiveFolders: [],
   lockedSubtrees: [],
   searchOpensInNewTab: true,
