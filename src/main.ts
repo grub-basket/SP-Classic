@@ -20,6 +20,7 @@ import { ensureOkfTemplate, okfFolders, rebuildOkfForFolder, OKF_DEFAULT_TEMPLAT
 import { buildOkfBundleFiles, zipBundle, tarGzBundle } from "./okf-export";
 import { formatDateTime } from "./format";
 import { resolveStashBytes, isEncryptedStash } from "./stash-crypto";
+import { parseRunActions, STASHPAD_PROTOCOL_ACTION } from "./deep-link";
 import { StashpadLog } from "./log";
 import { ROOT_ID, parseAssignees } from "./types";
 import { OrderStore } from "./order-store";
@@ -784,6 +785,12 @@ export default class StashpadPlugin extends Plugin {
       STASHPAD_FOLDER_PANEL_VIEW_TYPE,
       (leaf: WorkspaceLeaf) => new StashpadFolderPanelView(leaf, this),
     );
+    // 0.147 (ported) — Deep links: `obsidian://stashpad?folder=…&note=<id>&run=reveal[,open]`.
+    // Routes into the Stashpad view, reveals a note, runs a small macro. (Obsidian
+    // only allows an action under its own scheme, not a custom `stashpad://`.)
+    this.registerObsidianProtocolHandler(STASHPAD_PROTOCOL_ACTION, (params) => {
+      void this.handleDeepLink(params);
+    });
     // 0.68.1: track the most-recently-active Stashpad leaf so the
     // sidebar panel's Search / Home buttons target the leaf the user
     // last worked in — not "leaves[0]" (= leftmost tab) which has
@@ -1162,6 +1169,11 @@ export default class StashpadPlugin extends Plugin {
       id: "stashpad-copy-tree",
       name: "Copy focused subtree",
       callback: () => call("cmdCopyTree"),
+    });
+    this.addCommand({
+      id: "stashpad-copy-link",
+      name: "Copy Stashpad link (deep link / URL) to note",
+      callback: () => call("cmdCopyStashpadLink"),
     });
     this.addCommand({
       id: "stashpad-copy-outline",
@@ -3871,6 +3883,64 @@ export default class StashpadPlugin extends Plugin {
     // landing on Home and navigating only on the second.
     const leaf = await this.activateViewForFolder(clean);
     this.navigateLeafTo(leaf, clean, id);
+  }
+
+  /** 0.147 (ported): resolve a note's frontmatter `id` → its TFile within
+   *  `folder` (direct children only — matches Stashpad's one-folder-per-view
+   *  model). Returns null if no note in that folder carries the id. */
+  resolveNoteFileInFolder(folder: string, id: string): TFile | null {
+    const dir = folder.replace(/\/+$/, "");
+    for (const f of this.app.vault.getMarkdownFiles()) {
+      if ((f.parent?.path?.replace(/\/+$/, "") ?? "") !== dir) continue;
+      if (this.app.metadataCache.getFileCache(f)?.frontmatter?.id === id) return f;
+    }
+    return null;
+  }
+
+  /** 0.147 (ported): handle an `obsidian://stashpad?…` deep link. Resolve →
+   *  activate → reveal → run macro. Any unresolved target is a LOUD failure
+   *  (Notice), never a silent no-op. */
+  async handleDeepLink(params: { folder?: string; note?: string; run?: string; action?: string; vault?: string }): Promise<void> {
+    const folder = (params.folder || "").replace(/^\/+|\/+$/g, "");
+    const noteId = (params.note || "").trim();
+    const actions = parseRunActions(params);
+
+    // 1. Guard + resolve.
+    if (!folder) { new Notice("Stashpad link: missing “folder”."); return; }
+    const dir = this.app.vault.getAbstractFileByPath(folder);
+    if (!(dir instanceof TFolder)) { new Notice(`Stashpad link: folder “${folder}” not found.`); return; }
+
+    // 2. Wait for the workspace to settle. On a cross-vault jump Obsidian may
+    // still be laying out when the handler fires. onLayoutReady fires immediately
+    // if already ready (the common same-vault path), so this is a no-op there.
+    await new Promise<void>((resolve) => this.app.workspace.onLayoutReady(() => resolve()));
+
+    let file: TFile | null = null;
+    if (noteId) {
+      // On a cross-vault cold start the metadata cache may not have parsed
+      // frontmatter yet, so a note that DOES exist can momentarily look absent.
+      // Retry briefly before failing loudly — same-vault resolves on first try.
+      for (let i = 0; i < 12 && !file; i++) {
+        file = this.resolveNoteFileInFolder(folder, noteId);
+        if (!file) await new Promise((r) => window.setTimeout(r, 150));
+      }
+      if (!file) { new Notice(`Stashpad link: note “${noteId}” not found in ${folder}.`); return; }
+    }
+
+    // 3. Activate the view + reveal the note (or just open the folder).
+    if (noteId) await this.revealNoteByRef(folder, noteId);
+    else await this.openFolderInStashpad(folder);
+
+    // 4. Run the macro, in order. `reveal` is already satisfied by step 3.
+    // Unknown tokens are skipped with a warning — one bad token never aborts.
+    for (const token of actions) {
+      if (token === "reveal") continue;
+      if (token === "open") {
+        if (file) await this.app.workspace.getLeaf("tab").openFile(file);
+        continue;
+      }
+      console.warn(`[stashpad] deep link: unknown action “${token}” — skipped.`);
+    }
   }
 
   /** Tidy Stashpad tabs: PRUNE orphans (focused on a note that no longer
