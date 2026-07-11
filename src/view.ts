@@ -20,6 +20,7 @@ import { IntegrityWatcher } from "./integrity-watcher";
 import { getSettings, getTemplatesFormats, onSettingsChange } from "./settings";
 import { StashpadSuggest } from "./note-picker";
 import { buildStashpadLink } from "./deep-link";
+import { returnToOriginOnClose } from "./leaf-return";
 import { StashpadCommandPalette } from "./command-palette";
 import { setActiveView, clearActiveView } from "./active-view";
 import { AssignModal, ColorPickerModal, ConfirmDeleteModal, ConfirmModal, DueDatePickerModal, SplitNoteModal } from "./modals";
@@ -7741,6 +7742,7 @@ export class StashpadView extends ItemView {
     if (!cleaned || !noteId) return;
     const settingsFolder = (this.plugin.settings.folder || "Stashpad").trim().replace(/^\/+|\/+$/g, "") || "Stashpad";
     const ws = this.app.workspace;
+    const originLeaf = this.leaf;
     const leaf = ws.getLeaf("tab");
     await leaf.setViewState({
       type: STASHPAD_VIEW_TYPE,
@@ -7752,6 +7754,10 @@ export class StashpadView extends ItemView {
     });
     ws.setActiveLeaf(leaf, { focus: true } as any);
     (ws as any).revealLeaf(leaf);
+    // 0.133.0 (ported): closing a search-opened note returns to the tab you
+    // searched from, not the tab to the right. (The other new-tab openers already
+    // had this inline; search results via openNoteInNewTab were the gap.)
+    returnToOriginOnClose(ws, leaf, originLeaf);
   }
 
   private async openFolderInNewTab(folder: string): Promise<void> {
