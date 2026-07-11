@@ -187,17 +187,27 @@ export default class StashpadPlugin extends Plugin {
       }
     };
 
-    // 1) data.json: default Obsidian path is <pluginDir>/data.json.
-    const oldData = `${(this.manifest as any).dir.replace(/\/+$/, "")}/data.json`;
-    const newData = this.pluginPrivatePath("data.json");
-    if (await adapter.exists(oldData) && !(await adapter.exists(newData))) {
+    // 1) data.json: relocate from the legacy `.stashpad/` private folder BACK to
+    //    the STANDARD <pluginDir>/data.json. Obsidian Sync's "community plugin
+    //    settings" only syncs the standard path — the relocated private copy never
+    //    synced, so pinned/hidden folders, toggles, and keybindings didn't
+    //    propagate across devices. `.stashpad/data.json` is this device's ACTIVE
+    //    store, so it's the source of truth and OVERWRITES whatever standard
+    //    data.json exists (the original relocation left a stale pre-relocation
+    //    standard copy behind — that stale copy must not win). Then retire the
+    //    legacy copy (kept as `.bak`) so we never re-migrate. (0.113.0, ported —
+    //    the private path was an encryption-era choice; encryption is gone now.)
+    const stdData = `${(this.manifest as any).dir.replace(/\/+$/, "")}/data.json`;
+    const legacyData = this.pluginPrivatePath("data.json");
+    if (await adapter.exists(legacyData)) {
       try {
-        await ensureDir();
-        const txt = await adapter.read(oldData);
-        await adapter.write(newData, txt);
-        console.debug("[Stashpad] migrated data.json →", newData);
+        const txt = await adapter.read(legacyData);
+        await adapter.write(stdData, txt);
+        await adapter.write(`${legacyData}.bak`, txt); // safety backup
+        await adapter.remove(legacyData);
+        console.debug("[Stashpad] relocated data.json → standard path (for Obsidian Sync)");
       } catch (e) {
-        console.warn("Stashpad: data.json migration failed", e);
+        console.warn("Stashpad: data.json relocation failed", e);
       }
     }
 
@@ -226,37 +236,14 @@ export default class StashpadPlugin extends Plugin {
     }
   }
 
-  /** Override Plugin.loadData to read from <pluginDir>/.stashpad/data.json
-   *  instead of the default <pluginDir>/data.json. We want all of the
-   *  plugin's persistent state living in one private folder. */
-  async loadData(): Promise<any> {
-    const adapter = this.app.vault.adapter;
-    const path = this.pluginPrivatePath("data.json");
-    if (!(await adapter.exists(path))) return null;
-    try {
-      return JSON.parse(await adapter.read(path));
-    } catch (e) {
-      console.warn("Stashpad: data.json parse failed", e);
-      return null;
-    }
-  }
-
-  /** Companion to loadData — writes to the relocated path and ensures
-   *  the directory exists. */
-  async saveData(data: any): Promise<void> {
-    const adapter = this.app.vault.adapter;
-    const dir = this.pluginPrivatePath();
-    if (!(await adapter.exists(dir))) {
-      // mkdir intermediates (manifest.dir + ".stashpad").
-      const parts = dir.split("/").filter(Boolean);
-      let cur = "";
-      for (const p of parts) {
-        cur = cur ? `${cur}/${p}` : p;
-        if (!(await adapter.exists(cur))) await adapter.mkdir(cur);
-      }
-    }
-    await adapter.write(this.pluginPrivatePath("data.json"), JSON.stringify(data, null, 2));
-  }
+  // 0.113.0 (ported): loadData/saveData are NO LONGER overridden. They previously
+  // relocated data.json into `.stashpad/`, which Obsidian Sync never syncs (it only
+  // syncs the standard <pluginDir>/data.json). Using Obsidian's inherited
+  // Plugin.loadData/saveData (standard path) makes settings — pinned/hidden
+  // folders, toggles, keybindings — sync across devices. The one-time relocation of
+  // an existing `.stashpad/data.json` happens in migrateLegacyPaths(). Other
+  // private files (log, render cache, authors) stay in `.stashpad/` via
+  // pluginPrivatePath().
   /** Create a brand-new Stashpad: ensures the folder exists (with any
    *  needed intermediates) and seeds it with a Home note that has the
    *  ROOT_ID frontmatter. Throws on collision so the caller can surface
