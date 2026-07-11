@@ -14,7 +14,6 @@ import { OrderStore } from "./order-store";
 import { SortStore, SORT_MODE_LABELS, SORT_MODES_ORDER } from "./sort-store";
 import { FrontmatterSyncQueue, rebootstrapFolderFrontmatter } from "./frontmatter-sync";
 import { buildFileActions } from "./notifications";
-import { newId } from "./id-service";
 import { bodyToSlug, buildFilename, parseIdFromFilename, DEFAULT_STOPWORDS } from "./slug-service";
 import { StashpadLog } from "./log";
 import { IntegrityWatcher } from "./integrity-watcher";
@@ -6878,7 +6877,7 @@ export class StashpadView extends ItemView {
     const body = this.stripFrontmatter(oldRaw);
     const sourceFm = (this.app.metadataCache.getFileCache(sourceFile)?.frontmatter ?? {}) as Record<string, any>;
 
-    const cloneId = newId();
+    const cloneId = this.plugin.mintNoteId();
     const slug = bodyToSlug(body, this.activeStopwords());
     const filename = buildFilename(slug, cloneId);
     const path = `${this.noteFolder}/${filename}`;
@@ -9200,7 +9199,7 @@ export class StashpadView extends ItemView {
     const folder = (opts.targetFolder ?? this.noteFolder).replace(/\/+$/, "");
     const remote = folder !== this.noteFolder;
     await this.ensureFolder(folder);
-    const id = newId();
+    const id = this.plugin.mintNoteId();
 
     // Per-Stashpad template: if the user has set one for this folder, fold
     // its body into the new note's body. Frontmatter overlay happens AFTER

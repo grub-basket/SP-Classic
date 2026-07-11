@@ -1,4 +1,5 @@
 import { Notice, Platform, Plugin, SuggestModal, TFile, TFolder, WorkspaceLeaf, setIcon } from "obsidian";
+import { freshId } from "./id-service";
 import { STASHPAD_DETAIL_VIEW_TYPE, STASHPAD_FOLDER_PANEL_VIEW_TYPE, STASHPAD_PANELS_VIEW_TYPE, STASHPAD_VIEW_TYPE, parseAuthorRef, toAttachmentLink, isInReservedSubfolder, type PinnedNoteRef, type StashpadId } from "./types";
 import { StashpadDetailView, openStashpadDetailView } from "./detail-view";
 import { StashpadView, properCaseFolderPath, DeletedTrashSuggestModal } from "./view";
@@ -42,6 +43,11 @@ interface FileSnapshot { path: string; binary: boolean; text?: string; data?: Ar
 
 export default class StashpadPlugin extends Plugin {
   settings: StashpadSettings = { ...DEFAULT_SETTINGS };
+  /** 0.142.5 (ported): dedup-at-creation index — every note id currently in the
+   *  vault. Built lazily on the first mintNoteId(), then kept current by the
+   *  metadataCache `changed` handler in onload — so minting never scans the vault
+   *  per call, and stays correct as notes sync in from other devices. */
+  private usedNoteIds: Set<string> | null = null;
   private undoStacks = new Map<string, UndoStack>();
   /** Most-recently-active Stashpad leaf — set on active-leaf-change.
    *  Used by sidebar panel actions (Search, Home) so they target the
@@ -665,7 +671,35 @@ export default class StashpadPlugin extends Plugin {
     return s;
   }
 
+  /** 0.142.5 (ported): mint a note id that doesn't collide with any id currently
+   *  in the vault. Use this for EVERY note-creation site instead of bare newId().
+   *  Amortized O(1) — the used-id set is built once (lazily) and maintained by the
+   *  metadataCache handler in onload. */
+  mintNoteId(): string {
+    if (this.usedNoteIds === null) this.rebuildUsedNoteIds();
+    const set = this.usedNoteIds!;
+    const id = freshId((c) => set.has(c));
+    set.add(id); // reserve immediately so a batch of creates can't collide
+    return id;
+  }
+
+  private rebuildUsedNoteIds(): void {
+    const set = new Set<string>();
+    for (const f of this.app.vault.getMarkdownFiles()) {
+      const id = (this.app.metadataCache.getFileCache(f)?.frontmatter as { id?: unknown } | undefined)?.id;
+      if (typeof id === "string" && id.trim()) set.add(id.trim());
+    }
+    this.usedNoteIds = set;
+  }
+
   async onload(): Promise<void> {
+    // 0.142.5 (ported): keep the dedup-at-creation id index current as files are
+    // parsed (our own creates AND notes synced in from other devices). Never
+    // removes on delete — a stale id only forces a re-roll, which is safe.
+    this.registerEvent(this.app.metadataCache.on("changed", (_file, _data, cache) => {
+      const id = (cache?.frontmatter as { id?: unknown } | undefined)?.id;
+      if (this.usedNoteIds && typeof id === "string" && id.trim()) this.usedNoteIds.add(id.trim());
+    }));
     // Migrate any legacy state from the OLD locations (vault root
     // .stashpad/ and the default plugin-folder data.json) into the
     // NEW private folder under <pluginDir>/.stashpad/. Runs before
@@ -2104,7 +2138,6 @@ export default class StashpadPlugin extends Plugin {
       const addCreated = !hasCreated;
       if (!addId && !addParent && !addCreated) return;
 
-      const { newId } = await import("./id-service");
       let stampedId: string | undefined;
       let stampedParent = false;
       let stampedCreated = false;
@@ -2115,7 +2148,7 @@ export default class StashpadPlugin extends Plugin {
         // in). Only modify slots that are actually empty on disk.
         if (addId) {
           const cur = typeof m.id === "string" ? m.id.trim() : "";
-          if (!cur) { stampedId = newId(); m.id = stampedId; }
+          if (!cur) { stampedId = this.mintNoteId(); m.id = stampedId; }
         }
         if (addParent) {
           const cur = m.parent;
