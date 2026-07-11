@@ -1718,6 +1718,19 @@
   transition-delay: 0s;
 }
 
+/* 0.120.2 (ported): kill list + composer transitions/animations on mobile to
+   cut the repaint flicker on re-render / scroll / selection change. Scoped to
+   the note rows (+ their children) and the COMPOSER'S DESCENDANTS only — the
+   composer's own `margin-bottom` transition above is the keyboard-reflow timing
+   and lives on `.stashpad-composer` itself, so the `*` descendant selector
+   leaves it untouched. */
+.stashpad-view.is-mobile .stashpad-note,
+.stashpad-view.is-mobile .stashpad-note *,
+.stashpad-view.is-mobile .stashpad-composer * {
+  transition: none !important;
+  animation: none !important;
+}
+
 /* Hide the composer's helper text on mobile — it wraps and eats
    another row of vertical space we can't afford. */
 .stashpad-view.is-mobile .stashpad-composer-help { display: none; }
@@ -2001,6 +2014,13 @@
 .stashpad-view.is-mobile .stashpad-focused {
   padding: 4px 0 6px;
   max-height: none;
+  /* 0.123.5 (ported): the base rule sets overflow-y:auto + max-height:40% for
+     the pinned DESKTOP header. On mobile max-height is none (header grows to
+     fit), so nothing scrolls — but the auto still makes this a clip box, and
+     any sub-pixel/taller-box overflow shaved the TOP edge of the action buttons
+     (the "kebab top clipped" report). Render children fully; the body keeps its
+     OWN inner max-height+scroll, so height can't run away. */
+  overflow-y: visible;
 }
 .stashpad-view.is-mobile .stashpad-focused .stashpad-note-text.is-clamped {
   -webkit-line-clamp: 1;

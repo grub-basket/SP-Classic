@@ -4662,6 +4662,14 @@ export class StashpadView extends ItemView {
         // selected note visible (it may have been hidden behind the composer).
         // Re-reveal after the keyboard's close animation settles the layout.
         if (Platform.isMobile && this.cursorIdx >= 0) setTimeout(() => this.revealCursorRow(), 350);
+        // 0.108.0 (ported): re-sync the list's touch hit-test region once the
+        // keyboard close + leaf resize settle. The WebView leaves the scroll
+        // container's tap targets offset after the programmatic scroll-to-bottom
+        // done during the transition, so the first deliberate tap lands on a row
+        // a full list-height away (users worked around it with a throwaway
+        // "priming" tap). Forcing a relayout rebuilds the event region.
+        setTimeout(() => this.resyncMobileScrollHitTest(), 650);
+        setTimeout(() => this.resyncMobileScrollHitTest(), 900);
       });
     }
     this.composerInputEl = ta;
@@ -5197,6 +5205,25 @@ export class StashpadView extends ItemView {
     requestAnimationFrame(doReveal);
     setTimeout(doReveal, 60);
     setTimeout(doReveal, 200);
+  }
+
+  /** 0.108.0 (ported): mobile only. Force the list's scroll container to
+   *  re-establish its touch hit-test region. iOS/Android WebView leaves tap
+   *  targets out of sync with the painted scroll position after a programmatic
+   *  scroll performed during a keyboard / leaf-resize transition (composer
+   *  submit pins to bottom), so the first tap after the keyboard dismisses opens
+   *  a row a full list-height away. Toggling overflow off and back on forces a
+   *  synchronous relayout that rebuilds the event region — exactly what a
+   *  throwaway user tap did. scrollTop is preserved so the view doesn't jump. */
+  private resyncMobileScrollHitTest(): void {
+    if (!Platform.isMobile) return;
+    const list = this.listEl;
+    if (!list) return;
+    const top = list.scrollTop;
+    list.style.overflowY = "hidden";
+    void list.offsetHeight; // force synchronous reflow
+    list.style.overflowY = "scroll";
+    list.scrollTop = top;
   }
 
   // --- Document-level keyboard ---
