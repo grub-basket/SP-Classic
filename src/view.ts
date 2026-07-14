@@ -9552,6 +9552,11 @@ export class StashpadView extends ItemView {
   private onFileModify = (file: TFile): void => {
     if (!(file instanceof TFile) || file.extension !== "md") return;
     if (!file.path.startsWith(this.noteFolder + "/")) return;
+    // 0.122.6 (ported, #13): drop this file's (possibly stale-content-but-fresh-
+    // mtime) render-cache entry so the debounced re-render below recomputes from
+    // fresh content — fixes the truncated/attachment-less "earlier version"
+    // render that stuck until reload (network drive / external edits).
+    this.bodyRenderer.evict(file);
     this.scheduleSlugRename(file);
     this.scheduleAttachmentSync(file);
     // 0.72.4: classify self vs external and queue the contributor stamp.

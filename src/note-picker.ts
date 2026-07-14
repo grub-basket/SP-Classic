@@ -343,12 +343,6 @@ export class StashpadSuggest extends SuggestModal<PickerItem> {
     // run token-order-agnostic match against title/body.
     const parsed = parseSearchQuery(query);
     const tokens = parsed.text;
-    // 0.64.2 diagnostic — use console.log (not debug) so it shows
-    // at the default DevTools log level. Always fires while we're
-    // debugging the filter pipeline.
-    console.log("[Stashpad] search query parsed", {
-      query, text: parsed.text, filters: parsed.filters,
-    });
     const matchesAll = (haystack: string): boolean => {
       if (!tokens.length) return true;
       for (const t of tokens) if (!haystack.includes(t)) return false;
