@@ -1122,6 +1122,50 @@ export class TypeToConfirmModal extends Modal {
   onClose(): void { this.contentEl.empty(); }
 }
 
+/** 0.147.1 (ported): paste an `obsidian://stashpad?…` link and open it — the
+ *  manual counterpart to clicking a hyperlinked deep link, for apps that won't
+ *  render `obsidian://` URLs as clickable. Prefills from the clipboard when it
+ *  holds a Stashpad link so the common case is just Enter. */
+export class OpenDeepLinkModal extends Modal {
+  constructor(app: App, private onSubmit: (raw: string) => void) { super(app); }
+  onOpen(): void {
+    this.contentEl.empty();
+    this.modalEl.addClass("stashpad-export-modal");
+    this.titleEl.setText("Open Stashpad link");
+    this.contentEl.createEl("p", { cls: "stashpad-export-desc", text: "Paste an obsidian://stashpad link to jump to the note it points to." });
+
+    const input = this.contentEl.createEl("input", { type: "text" });
+    input.addClass("stashpad-export-name");
+    input.placeholder = "obsidian://stashpad?folder=…&note=…";
+
+    const footer = this.contentEl.createDiv({ cls: "stashpad-export-footer" });
+    footer.createEl("button", { text: "Cancel" }).onclick = () => this.close();
+    const go = footer.createEl("button", { cls: "mod-cta", text: "Open" });
+
+    const run = () => {
+      const v = input.value.trim();
+      if (!v) return;
+      this.close();
+      this.onSubmit(v);
+    };
+    go.onclick = () => run();
+    this.scope.register([], "Enter", (e) => { e.preventDefault(); run(); });
+
+    requestAnimationFrame(() => {
+      input.focus();
+      // Prefill from the clipboard when it already holds a Stashpad link — the
+      // whole point is pasting, so save the paste. Best-effort.
+      void navigator.clipboard?.readText?.().then((t) => {
+        if (!input.value && t && /obsidian:\/\/stashpad\?/i.test(t.trim())) {
+          input.value = t.trim();
+          input.select();
+        }
+      }).catch(() => { /* clipboard blocked — user pastes manually */ });
+    });
+  }
+  onClose(): void { this.contentEl.empty(); }
+}
+
 export class CustomColorModal extends Modal {
   private value: string;
   private delivered = false;

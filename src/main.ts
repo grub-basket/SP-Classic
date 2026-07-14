@@ -9,7 +9,7 @@ import { StashpadPanelsView, openStashpadPanelsView, PANEL_REGISTRY, type PanelI
 import { StashpadFolderPanelView, openFolderPanelView } from "./folder-panel-view";
 import { EncryptionService, defaultEncryptionConfig } from "./encryption-service";
 import { lockSubtree, unlockBundle, readLockedMeta, type LockResult, deleteEncryptSubtree, restoreDeleted, listDeletedBlobs, readDeletedMeta, deletedRestoreDest, backfillTrashEncrypt, restoreRawTrash, OBSIDIAN_TRASH_DIR, type DeletedMeta, collectSubtree } from "./encryption-ops";
-import { EncryptionPasswordModal } from "./modals";
+import { EncryptionPasswordModal, OpenDeepLinkModal } from "./modals";
 import {
   DEFAULT_SETTINGS, StashpadSettings, StashpadSettingTab, setSettings, SETTINGS_TABS,
   buildDefaultBindings, COMMAND_META, type CommandBindingMap,
@@ -21,7 +21,7 @@ import { ensureOkfTemplate, okfFolders, rebuildOkfForFolder, OKF_DEFAULT_TEMPLAT
 import { buildOkfBundleFiles, zipBundle, tarGzBundle } from "./okf-export";
 import { formatDateTime } from "./format";
 import { resolveStashBytes, isEncryptedStash } from "./stash-crypto";
-import { parseRunActions, STASHPAD_PROTOCOL_ACTION } from "./deep-link";
+import { parseRunActions, parseStashpadLink, STASHPAD_PROTOCOL_ACTION } from "./deep-link";
 import { StashpadLog } from "./log";
 import { ROOT_ID, parseAssignees } from "./types";
 import { OrderStore } from "./order-store";
@@ -1195,6 +1195,11 @@ export default class StashpadPlugin extends Plugin {
       id: "stashpad-copy-link",
       name: "Copy Stashpad link (deep link / URL) to note",
       callback: () => call("cmdCopyStashpadLink"),
+    });
+    this.addCommand({
+      id: "stashpad-open-link",
+      name: "Open Stashpad link (paste a deep link / URL)",
+      callback: () => this.openDeepLinkModal(),
     });
     this.addCommand({
       id: "stashpad-copy-outline",
@@ -3924,6 +3929,18 @@ export default class StashpadPlugin extends Plugin {
     // landing on Home and navigating only on the second.
     const leaf = await this.activateViewForFolder(clean);
     this.navigateLeafTo(leaf, clean, id);
+  }
+
+  /** 0.147.1 (ported): prompt for a pasted `obsidian://stashpad?…` link and open
+   *  it — the manual path for apps that won't hyperlink `obsidian://` URLs. Same
+   *  routing as a clicked link (`handleDeepLink`), so folder/note resolution +
+   *  loud failures are shared. */
+  openDeepLinkModal(): void {
+    new OpenDeepLinkModal(this.app, (raw) => {
+      const parsed = parseStashpadLink(raw);
+      if (!parsed) { new Notice("That doesn't look like a Stashpad link."); return; }
+      void this.handleDeepLink(parsed);
+    }).open();
   }
 
   /** 0.147 (ported): resolve a note's frontmatter `id` → its TFile within

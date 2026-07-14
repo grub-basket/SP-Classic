@@ -4365,6 +4365,12 @@ export class StashpadView extends ItemView {
       setIcon(enterBtn, "arrow-right");
       enterBtn.title = "Open in Stashpad view";
       enterBtn.onclick = (e) => { e.stopPropagation(); this.navigateTo(node.id); };
+      // 0.150.0 (ported): per-item copy-link button (desktop). Mirrors the "Copy
+      // Stashpad link" command / context-menu item, scoped to THIS row's note.
+      const copyLinkBtn = actions.createEl("button", { cls: "stashpad-pencil stashpad-copylink-btn" });
+      setIcon(copyLinkBtn, "link");
+      copyLinkBtn.title = "Copy Stashpad link to this note";
+      copyLinkBtn.onclick = (e) => { e.stopPropagation(); void this.cmdCopyStashpadLink(node); };
       toggleAnchor = pencil;
     }
 
@@ -6835,17 +6841,21 @@ export class StashpadView extends ItemView {
    *  (or first selected note). Paste it anywhere — clicking it lands back on this
    *  exact note. Uses the note's stable frontmatter `id`, so it survives renames. */
   async cmdCopyStashpadLink(node?: TreeNode): Promise<void> {
-    const target = node ?? this.getActionTargets()[0];
-    if (!target?.id) { new Notice("No note selected to link to."); return; }
-    const link = buildStashpadLink({
+    // 0.155.2 (ported): a specific node (right-click) links just that note;
+    // otherwise link EVERY action target — so a multi-selection (⚡ menu / hotkey)
+    // copies one deep link per selected note, newline-separated, not only the first.
+    const targets = node ? [node] : this.getActionTargets();
+    const valid = targets.filter((t) => !!t?.id);
+    if (valid.length === 0) { new Notice("No note selected to link to."); return; }
+    const links = valid.map((t) => buildStashpadLink({
       vault: this.app.vault.getName(),
       folder: this.noteFolder,
-      note: target.id,
+      note: t.id,
       run: ["reveal"],
-    });
+    }));
     try {
-      await navigator.clipboard.writeText(link);
-      new Notice("Stashpad link copied.");
+      await navigator.clipboard.writeText(links.join("\n"));
+      new Notice(links.length > 1 ? `${links.length} Stashpad links copied.` : "Stashpad link copied.");
     } catch {
       new Notice("Couldn't copy the link to the clipboard.");
     }
