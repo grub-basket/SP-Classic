@@ -1,6 +1,6 @@
 {
   "name": "stashpad-classic",
-  "version": "0.102.22",
+  "version": "0.102.23",
   "private": true,
   "scripts": {
     "dev": "node esbuild.config.mjs",
