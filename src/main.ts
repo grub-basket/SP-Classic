@@ -2642,6 +2642,44 @@ export default class StashpadPlugin extends Plugin {
     }
   }
 
+  /** 0.118.0 (ported): the user-chosen Lucide icon id for a folder's tab/panel,
+   *  or undefined to use the default. Keyed by cleaned folder path. */
+  getFolderIcon(folder: string): string | undefined {
+    const key = (folder || "").replace(/\/+$/, "");
+    const v = this.settings.folderIcons?.[key];
+    return v && v.trim() ? v.trim() : undefined;
+  }
+
+  /** 0.118.0 (ported): persist a folder's icon (empty/undefined clears it), then
+   *  refresh every open Stashpad tab showing that folder + the folder panels so
+   *  the new icon appears immediately. */
+  async setFolderIcon(folder: string, icon: string | undefined): Promise<void> {
+    const key = (folder || "").replace(/\/+$/, "");
+    const map = { ...(this.settings.folderIcons ?? {}) };
+    if (icon && icon.trim()) map[key] = icon.trim(); else delete map[key];
+    this.settings.folderIcons = map;
+    await this.saveSettings();
+    this.refreshFolderIconFor(key);
+  }
+
+  /** 0.118.0 (ported, adapted): re-read the tab header for every Stashpad view
+   *  pinned to `folder` + repaint its switcher icon, and re-render open folder
+   *  panels. (Classic has no refreshFolderPanels(), so we nudge the folder-panel
+   *  views' own scheduleRender directly.) */
+  refreshFolderIconFor(folder: string): void {
+    const key = (folder || "").replace(/\/+$/, "");
+    for (const leaf of this.app.workspace.getLeavesOfType(STASHPAD_VIEW_TYPE)) {
+      const v = leaf.view as any;
+      if (v && (v.noteFolder || "").replace(/\/+$/, "") === key) {
+        try { (leaf as any).updateHeader?.(); } catch { /* ignore */ }
+        try { v.refreshFolderSwitcherIcon?.(); } catch { /* ignore */ }
+      }
+    }
+    for (const leaf of this.app.workspace.getLeavesOfType(STASHPAD_FOLDER_PANEL_VIEW_TYPE)) {
+      try { (leaf.view as any).scheduleRender?.(); } catch { /* ignore */ }
+    }
+  }
+
   /** Unified folder picker / switcher / creator — the single entry
    *  point for the ribbon button, the view's switch-folder button, and
    *  the `pickFolder` keybinding / command-palette entry. 0.65.0.

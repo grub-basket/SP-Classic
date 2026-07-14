@@ -101,6 +101,20 @@ export class StashpadFolderPanelView extends ItemView {
     }
   }
 
+  /** 0.118.0 (ported): prompt for a Lucide icon id for this folder's tab/panel
+   *  (blank clears), then persist + refresh open tabs/panels. */
+  private async setFolderIconFlow(folder: string): Promise<void> {
+    const current = this.plugin.getFolderIcon(folder) ?? "";
+    const raw = await new NewFolderPromptModal(this.app, {
+      title: "Set tab icon",
+      desc: "Lucide icon id for this folder's tab + switcher (e.g. rocket, star, book-open). Browse ids at lucide.dev. Blank = default.",
+      placeholder: "list-tree",
+      initial: current,
+    }).prompt();
+    if (raw === null) return; // cancelled
+    await this.plugin.setFolderIcon(folder, raw.trim() || undefined);
+  }
+
   private clampFrac(f: number): number {
     if (!Number.isFinite(f)) return 0.5;
     return Math.max(0.15, Math.min(0.85, f));
@@ -506,7 +520,8 @@ export class StashpadFolderPanelView extends ItemView {
     // (one icon instead of folder + a separate badge).
     const isArchive = this.plugin.isArchiveFolder(folder);
     const folderIcon = row.createSpan({ cls: "stashpad-folderpanel-folder-icon" });
-    setIcon(folderIcon, isArchive ? "archive" : "folder");
+    // 0.118.0 (ported): a user-set per-folder icon wins; else archive/folder default.
+    setIcon(folderIcon, this.plugin.getFolderIcon(folder) ?? (isArchive ? "archive" : "folder"));
     if (isArchive) folderIcon.setAttr("aria-label", "Archive folder — notes moved in are auto-encrypted");
     const homeColor = this.folderHomeColor(folder);
     if (homeColor) folderIcon.style.color = homeColor;
@@ -626,6 +641,9 @@ export class StashpadFolderPanelView extends ItemView {
     menu.addSeparator();
     menu.addItem((i) => i.setTitle("Rename…").setIcon("pencil")
       .onClick(() => this.renameFolder(folder)));
+    // 0.118.0 (ported): pick a Lucide icon for this folder's tab + switcher.
+    menu.addItem((i) => i.setTitle("Set tab icon…").setIcon("shapes")
+      .onClick(() => void this.setFolderIconFlow(folder)));
     /* SP-Classic: encryption disabled — folder encrypt/unlock, archive-folder, and
        open-encrypted-trash context-menu items removed.
     // Encryption (Phase 3): lock every top-level note in the folder into separate
@@ -780,20 +798,34 @@ class NewFolderPromptModal extends Modal {
   private value = "";
   private resolved = false;
   private resolve: ((v: string | null) => void) | null = null;
+  private opts: { title: string; desc: string; placeholder: string; initial: string };
+
+  // 0.118.0 (ported): generalized so it also backs the "Set tab icon…" prompt.
+  constructor(app: App, opts?: Partial<{ title: string; desc: string; placeholder: string; initial: string }>) {
+    super(app);
+    this.opts = {
+      title: opts?.title ?? "New Stashpad folder",
+      desc: opts?.desc ?? "Vault-relative folder path. It's created (with intermediates) and seeded with a Home note, then opened.",
+      placeholder: opts?.placeholder ?? "my-stashpad",
+      initial: opts?.initial ?? "",
+    };
+    this.value = this.opts.initial;
+  }
 
   prompt(): Promise<string | null> {
     return new Promise((resolve) => { this.resolve = resolve; this.open(); });
   }
 
   onOpen(): void {
-    this.titleEl.setText("New Stashpad folder");
+    this.titleEl.setText(this.opts.title);
     const { contentEl } = this;
     contentEl.createEl("p", {
       cls: "setting-item-description",
-      text: "Vault-relative folder path. It's created (with intermediates) and seeded with a Home note, then opened.",
+      text: this.opts.desc,
     });
     const input = contentEl.createEl("input", { type: "text", cls: "stashpad-newfolder-input" });
-    input.placeholder = "my-stashpad";
+    input.placeholder = this.opts.placeholder;
+    input.value = this.opts.initial;
     input.setCssStyles({ width: "100%", marginBottom: "12px" });
     input.addEventListener("input", () => { this.value = input.value; });
     input.addEventListener("keydown", (e) => {

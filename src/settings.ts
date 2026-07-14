@@ -174,6 +174,11 @@ export interface StashpadSettings {
    *  pinned notes (jump straight to one). Off by default to keep the picker
    *  focused on folders. */
   folderSwitcherIncludePinned: boolean;
+  /** 0.118.0 (ported): per-folder tab/panel icon. Keyed by cleaned folder path →
+   *  a Lucide icon id (e.g. "rocket", "star"). When set, the folder's Stashpad tab
+   *  (and the folder panel + folder switcher) show this icon instead of the default
+   *  "list-tree". Empty/absent → default icon. */
+  folderIcons: Record<string, string>;
   /** 0.86.2: folder panel — fraction of height given to the Pinned section
    *  (the rest goes to Folders). Set by dragging the divider. 0.15–0.85. */
   folderPanelPinnedFraction: number;
@@ -471,6 +476,7 @@ export const DEFAULT_SETTINGS: StashpadSettings = {
   autoImport: false,
   inheritObsidianExclusions: true,
   folderSwitcherIncludePinned: false,
+  folderIcons: {},
   folderPanelPinnedFraction: 0.5,
   folderPanelPinned: [],
   folderPanelDownranked: [],

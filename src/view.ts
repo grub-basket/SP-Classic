@@ -348,7 +348,19 @@ export class StashpadView extends ItemView {
       ?? (this as any).titleEl as HTMLElement | null;
     if (titleEl && titleEl.textContent !== text) titleEl.setText(text);
   }
-  getIcon(): string { return "list-tree"; }
+  getIcon(): string {
+    // 0.118.0 (ported): per-folder icon (set via the folder context menu)
+    // overrides the default, so a folder's tab carries its own Lucide icon.
+    // Obsidian renders the tab icon via setIcon (Lucide ids only).
+    return this.plugin.getFolderIcon(this.noteFolder) ?? "list-tree";
+  }
+
+  /** 0.118.0 (ported): re-paint the folder-switcher button's icon in place
+   *  (called when the per-folder icon changes, so open tabs update live). */
+  refreshFolderSwitcherIcon(): void {
+    const span = this.containerEl.querySelector(".stashpad-folder-btn .stashpad-btn-icon") as HTMLElement | null;
+    if (span) { span.empty(); setIcon(span, this.plugin.getFolderIcon(this.noteFolder) ?? "folder"); }
+  }
 
   async onOpen(): Promise<void> {
     const host = this.contentEl;
