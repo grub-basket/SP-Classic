@@ -9344,6 +9344,12 @@ export class StashpadView extends ItemView {
             this.tree.insertSynthetic({
               id, parent: parentId, children: [], file: f as TFile, created,
             });
+            // 0.159.0 (ported): seed the render cache from the body we JUST wrote,
+            // so the new row paints its real body immediately — no filename-title
+            // placeholder and no `cachedRead` (the slow network round-trip). On a
+            // network drive this is the difference between an instant, stable new
+            // row and the body→title→body flash while the read resolves.
+            await this.bodyRenderer.primeRender(f as TFile, body);
             this.render();
             this.fmSync.scheduleParentChange(id, null, parentId);
           } else {
@@ -9577,6 +9583,17 @@ export class StashpadView extends ItemView {
   private onFileModify = (file: TFile): void => {
     if (!(file instanceof TFile) || file.extension !== "md") return;
     if (!file.path.startsWith(this.noteFolder + "/")) return;
+    // 0.160.0 (ported): our OWN recovery-field write (fmSync parentLink/children)
+    // only touches frontmatter — the body is provably unchanged. Evicting +
+    // re-rendering here would flash the filename placeholder and re-read the body
+    // over the network (the SECOND create flash on a slow drive). Instead move the
+    // cache entry to the new mtime so it stays a hit, and skip the re-render +
+    // slug/attachment/authorship handling (none apply to a frontmatter-only
+    // write). One-shot per write, so a genuine later body edit is still handled.
+    if (this.fmSync.wasRecentSelfWrite(file.path)) {
+      this.bodyRenderer.retagMtime(file.path, file.stat.mtime);
+      return;
+    }
     // 0.122.6 (ported, #13): drop this file's (possibly stale-content-but-fresh-
     // mtime) render-cache entry so the debounced re-render below recomputes from
     // fresh content — fixes the truncated/attachment-less "earlier version"
