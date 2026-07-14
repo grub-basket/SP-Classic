@@ -9,7 +9,7 @@ import {
 } from "./types";
 import { TreeIndex } from "./tree-index";
 import { perf } from "./perf";
-import { formatDateTime } from "./format";
+import { formatDateTime, formatDateOnly, formatTimeOnly } from "./format";
 import { OrderStore } from "./order-store";
 import { SortStore, SORT_MODE_LABELS, SORT_MODES_ORDER } from "./sort-store";
 import { FrontmatterSyncQueue, rebootstrapFolderFrontmatter } from "./frontmatter-sync";
@@ -4042,6 +4042,9 @@ export class StashpadView extends ItemView {
     if (!node.file) return;
     const file = node.file;
     const wrap = parent.createDiv({ cls: "stashpad-focused" });
+    // 0.122.2 (ported, #9): the focused-note header gets the same right-click menu
+    // as a list row (it IS a note — Copy/Cut/Move/Delete all apply to it).
+    wrap.oncontextmenu = (evt) => { evt.preventDefault(); this.openNoteMenu(evt, node); };
 
     // meta column: timestamp + a transparent grip-shaped spacer so the
     // body's left edge column-aligns with each list row's body.
@@ -9671,7 +9674,12 @@ export class StashpadView extends ItemView {
       const fmt = getTemplatesFormats(this.app);
       if (fmt) return `${d.format(fmt.dateFormat)}\n${d.format(fmt.timeFormat)}`;
     }
-    return `${d.format("YYYY.MM.DD")}\n${d.format("HH:mm A")}`;
+    // 0.121.7 (ported): when NOT using the Templates plugin format, honour the
+    // user's "Date display format" dropdown (+ timezone) for the two-line list
+    // timestamp — previously this ignored the dropdown and was hardcoded, so the
+    // dropdown only affected the detail/tasks panels.
+    const ms = d.valueOf();
+    return `${formatDateOnly(ms, settings)}\n${formatTimeOnly(ms, settings)}`;
   }
   /** public: read by extracted command modules (commands/*.ts). */
   formatTimeInline(iso: string): string {
@@ -9795,6 +9803,16 @@ export class StashpadView extends ItemView {
       // Operate on the right-clicked row even if it isn't selected.
       if (!this.selection.has(node.id)) { this.selection.clear(); this.selection.add(node.id); this.lastSelected = node.id; }
       void this.cmdClone();
+    }));
+    // 0.122.2 (ported, #9): copy the note's text, or cut the whole note (for
+    // paste / move). Normalise the selection to the right-clicked row first.
+    menu.addItem((it: any) => it.setTitle("Copy text").setIcon("copy").onClick(() => {
+      if (!this.selection.has(node.id)) { this.selection.clear(); this.selection.add(node.id); this.lastSelected = node.id; }
+      void this.cmdCopy();
+    }));
+    menu.addItem((it: any) => it.setTitle("Cut note").setIcon("scissors").onClick(() => {
+      if (!this.selection.has(node.id)) { this.selection.clear(); this.selection.add(node.id); this.lastSelected = node.id; }
+      void this.cmdCutNotes();
     }));
     menu.addItem((it: any) => it.setTitle("Insert template…").setIcon("file-plus-2").onClick(() => this.cmdInsertTemplate()));
     menu.addItem((it: any) => it.setTitle("Export to .stash").setIcon("package").onClick(() => {
