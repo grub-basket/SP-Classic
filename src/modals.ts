@@ -1455,6 +1455,53 @@ export class ConfirmModal extends Modal {
   }
 }
 
+/** 0.117.0 (ported): breadcrumb "all levels" picker. The breadcrumb row squishes
+ *  (and clips its rightmost crumbs) when the pane is narrow or the path is deep,
+ *  so this modal lists EVERY level top-to-bottom — full titles, no truncation —
+ *  and lets the user jump to any one. The current level is marked + non-navigating. */
+export interface BreadcrumbLevel {
+  id: string;
+  /** Full, untruncated title for this level. */
+  label: string;
+  /** 0 = Home; 1..n = depth down the path. Drives the indent. */
+  level: number;
+  isCurrent: boolean;
+  isHome?: boolean;
+}
+export class BreadcrumbLevelsModal extends Modal {
+  constructor(
+    app: App,
+    private levels: BreadcrumbLevel[],
+    private onPick: (id: string) => void,
+  ) { super(app); }
+  onOpen(): void {
+    this.modalEl?.addClass("stashpad-compact-modal");
+    this.modalEl?.addClass("stashpad-breadcrumb-modal");
+    this.contentEl.empty();
+    this.titleEl.setText("Jump to level");
+    const list = this.contentEl.createDiv({ cls: "stashpad-bc-levels" });
+    for (const lvl of this.levels) {
+      const row = list.createDiv({ cls: "stashpad-bc-level-row" });
+      if (lvl.isCurrent) row.addClass("is-current");
+      // Indent by depth (capped) so the hierarchy reads at a glance.
+      row.style.setProperty("--stashpad-bc-indent", `${Math.min(lvl.level, 8) * 14}px`);
+      const icon = row.createSpan({ cls: "stashpad-bc-level-icon" });
+      setIcon(icon, lvl.isHome ? "home" : lvl.isCurrent ? "map-pin" : "corner-down-right");
+      row.createSpan({ cls: "stashpad-bc-level-label", text: lvl.label });
+      if (lvl.isCurrent) {
+        row.createSpan({ cls: "stashpad-bc-level-here", text: "current" });
+      } else {
+        row.setAttribute("role", "button");
+        row.setAttribute("tabindex", "0");
+        const go = (): void => { this.close(); this.onPick(lvl.id); };
+        row.onclick = go;
+        row.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
+      }
+    }
+  }
+  onClose(): void { this.contentEl.empty(); }
+}
+
 /** 0.76.1: pick a due date + time for a task. Uses native
  *  <input type="date"> + <input type="time"> so mobile gets the OS
  *  date/time pickers for free. Quick-preset buttons (Today, Tomorrow,

@@ -23,7 +23,7 @@ import { buildStashpadLink } from "./deep-link";
 import { returnToOriginOnClose } from "./leaf-return";
 import { StashpadCommandPalette } from "./command-palette";
 import { setActiveView, clearActiveView } from "./active-view";
-import { AssignModal, ColorPickerModal, ConfirmDeleteModal, ConfirmModal, DueDatePickerModal, SplitNoteModal } from "./modals";
+import { AssignModal, BreadcrumbLevelsModal, type BreadcrumbLevel, ColorPickerModal, ConfirmDeleteModal, ConfirmModal, DueDatePickerModal, SplitNoteModal } from "./modals";
 import { ComposerAutocomplete } from "./composer-autocomplete";
 import { matchBinding, humanCombo } from "./view-keys";
 import { AuthorshipTracker } from "./authorship-tracker";
@@ -3852,6 +3852,10 @@ export class StashpadView extends ItemView {
     // the breadcrumb row, before Home — easier to reach on mobile and
     // gives the time-filter row more horizontal real estate.
     this.renderActionsCluster(bar);
+    // 0.117.0 (ported): a dedicated "all levels" button at the START of the row
+    // (always visible — the row clips its rightmost crumbs when narrow or deep).
+    // Opens a modal listing every level full-width + clickable. Only when below Home.
+    if (this.focusId !== ROOT_ID) this.renderBreadcrumbLevelsButton(bar);
     const homeBtn = bar.createSpan({ cls: "stashpad-crumb stashpad-crumb-home" });
     if (Platform.isMobile) {
       // Mobile: render as a house icon to save horizontal space.
@@ -3914,7 +3918,7 @@ export class StashpadView extends ItemView {
     }
 
     for (const c of crumbs) {
-      bar.createSpan({ cls: "stashpad-crumb-sep", text: " / " });
+      bar.createSpan({ cls: "stashpad-crumb-sep", text: Platform.isMobile ? "/" : " / " });
       if (c.isEllipsis) {
         bar.createSpan({ cls: "stashpad-crumb stashpad-crumb-ellipsis", text: c.label }).title =
           path.map((n) => this.titleForNode(n)).join(" / ");
@@ -3963,6 +3967,38 @@ export class StashpadView extends ItemView {
       exitBtn.title = "Exit compact mode";
       exitBtn.onclick = (e) => { e.preventDefault(); this.toggleCompactMode(); };
     }
+  }
+
+  /** 0.117.0 (ported): the breadcrumb "all levels" button. Sits at the row start
+   *  so it's never clipped, and opens BreadcrumbLevelsModal listing every level
+   *  full-width + clickable — the escape hatch when the inline crumbs are squished. */
+  private renderBreadcrumbLevelsButton(bar: HTMLElement): void {
+    const btn = bar.createSpan({ cls: "stashpad-crumb-levels-btn" });
+    btn.setAttribute("role", "button");
+    btn.setAttribute("tabindex", "0");
+    setIcon(btn, "list-tree");
+    btn.title = "Show all levels — jump to any level in the path";
+    const open = (e: Event): void => { e.preventDefault(); this.openBreadcrumbLevelsModal(); };
+    btn.onclick = open;
+    btn.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") open(e); };
+  }
+
+  /** 0.117.0 (ported): build the level list (Home + full path, untruncated) and
+   *  open the picker modal. Clicking a level navigates there. */
+  private openBreadcrumbLevelsModal(): void {
+    const path = this.tree.pathTo(this.focusId);
+    const levels: BreadcrumbLevel[] = [
+      { id: ROOT_ID, label: "Home", level: 0, isCurrent: this.focusId === ROOT_ID, isHome: true },
+    ];
+    path.forEach((n, i) => {
+      levels.push({
+        id: n.id,
+        label: this.titleForNode(n),
+        level: i + 1,
+        isCurrent: n.id === this.focusId,
+      });
+    });
+    new BreadcrumbLevelsModal(this.app, levels, (id) => this.navigateTo(id as StashpadId)).open();
   }
 
   /** Long-press helper. Triggers `cb` after 500ms of touchstart held in
