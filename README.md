@@ -1,14 +1,32 @@
 # Stashpad Classic
 
+## Retired — please switch to Stashpad
+
+**Obsidian's insider APIs are now in the public release, so regular Stashpad runs for
+everyone again. You no longer need Classic.**
+
+**Get Stashpad:** install it from the Obsidian community store — open **Settings →
+Community plugins → Browse**, search for **Stashpad**, or use the
+[store page](https://obsidian.md/plugins?id=stashpad). It has everything Classic has and
+more (encryption, tasks, the full mobile layout), and it's actively maintained.
+
+**Why Classic existed:** mainline Stashpad accidentally shipped a build that required
+Obsidian's insider-only APIs, which locked out anyone on the normal public release.
+Classic was a fork pinned to the last stable-compatible version (0.102.16), with
+encryption removed and many later features hand-ported back, so people on stable
+Obsidian weren't left stranded.
+
+**What happens now:** Classic is frozen at its last release. It stays installable for
+anyone who still wants it, but it won't get further updates.
+
+_Until the next time I fumble an insider-API build, anyway. See you then._ 🙂
+
+---
+
 A chat-style, nested-notes workspace for [Obsidian](https://obsidian.md). Type at
 the bottom, your notes stack and nest, and you drill in and out of the tree, with
 optional **Open Knowledge Format (OKF)** export so your notes can be shared with
 LLMs and agents.
-
-> 🧭 **This is the Classic build.** Stashpad Classic is pinned at **0.102.16**, the
-> last release that targets **stable (non-insider) Obsidian** (`minAppVersion 1.7.0`).
-> Mainline Stashpad moved to `minAppVersion 1.13.0` (insider) from 0.102.19 onward.
-> Use this build if you're on a stable Obsidian release.
 
 > ⚠️ **Alpha software.** Stashpad does a lot and is usable daily, but it's young.
 > Keep backups of anything important.
@@ -16,18 +34,17 @@ LLMs and agents.
 > The project was designed and directed by its maintainer, but the **code was
 > written by an AI assistant** — it is not hand-authored or human-reviewed.
 
-## Install
+## Install (Classic — frozen)
 
-Requires Obsidian **1.7.0+** (desktop or mobile) — it runs on the current stable
-Obsidian, no insider build needed.
+Classic is retired (see the note above). This build is kept here only for anyone who
+still wants the last stable-Obsidian version. For ongoing updates and new features,
+install **Stashpad** instead. Requires Obsidian **1.7.0+**.
 
 Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat): add the beta plugin
 `grub-basket/SP-Classic`. Or download `main.js`, `manifest.json`, and `styles.css`
 from the [latest release](https://github.com/grub-basket/SP-Classic/releases/latest)
 into `.obsidian/plugins/stashpad-classic/` in your vault, then enable **Stashpad
 Classic** in **Settings → Community plugins**.
-
-**Via BRAT (optional).** You can also install through [BRAT](https://obsidian.md/plugins?id=obsidian42-brat) ([GitHub](https://github.com/TfTHacker/obsidian42-brat)): choose "Add beta plugin" and paste `https://github.com/grub-basket/SP`. BRAT lets you pin a specific version, which is handy for downgrading or grabbing a fix before it reaches the store.
 
 ## Quick start
 
