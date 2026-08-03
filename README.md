@@ -7,7 +7,7 @@ everyone again. You no longer need Classic.**
 
 **Get Stashpad:** install it from the Obsidian community store — open **Settings →
 Community plugins → Browse**, search for **Stashpad**, or use the
-[store page](https://obsidian.md/plugins?id=stashpad). It has everything Classic has and
+[store page](https://community.obsidian.md/plugins/stashpad). It has everything Classic has and
 more (encryption, tasks, the full mobile layout), and it's actively maintained.
 
 **Why Classic existed:** mainline Stashpad accidentally shipped a build that required
