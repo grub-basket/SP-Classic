@@ -179,6 +179,10 @@ export interface StashpadSettings {
    *  (and the folder panel + folder switcher) show this icon instead of the default
    *  "list-tree". Empty/absent → default icon. */
   folderIcons: Record<string, string>;
+  /** Retirement: set once the user explicitly acknowledges the "Classic is retired,
+   *  switch to Stashpad" startup notice (clicks the link or "Don't show again").
+   *  A plain dismissal does NOT set this, so a habitual close re-shows next launch. */
+  retirementNoticeAck: boolean;
   /** 0.86.2: folder panel — fraction of height given to the Pinned section
    *  (the rest goes to Folders). Set by dragging the divider. 0.15–0.85. */
   folderPanelPinnedFraction: number;
@@ -477,6 +481,7 @@ export const DEFAULT_SETTINGS: StashpadSettings = {
   inheritObsidianExclusions: true,
   folderSwitcherIncludePinned: false,
   folderIcons: {},
+  retirementNoticeAck: false,
   folderPanelPinnedFraction: 0.5,
   folderPanelPinned: [],
   folderPanelDownranked: [],

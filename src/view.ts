@@ -2160,6 +2160,10 @@ export class StashpadView extends ItemView {
       && (this.stickToListBottom
         || this.listEl.scrollTop + this.listEl.clientHeight >= this.listEl.scrollHeight - 2);
     root.empty();
+    // Retirement banner (B): re-added as the FIRST child on every render (root is
+    // emptied above), so it's always the slim bar at the top of the view. Gated by
+    // the session dismiss flag, so a habitual × just hides it until next launch.
+    this.renderRetirementBanner(root);
     root.toggleClass("is-mobile", Platform.isMobile);
     // 0.61.1: tiny-mode shell — skip the filter bar, breadcrumb, and
     // focused-header. Render a slim strip with the folder name +
@@ -4003,6 +4007,23 @@ export class StashpadView extends ItemView {
 
   /** Long-press helper. Triggers `cb` after 500ms of touchstart held in
    *  place; cancelled on touchmove / touchend / touchcancel. */
+  /** Retirement banner (B). A slim always-available bar at the top of the view
+   *  pointing to mainline Stashpad. The × hides it for THIS session (returns next
+   *  launch) — you can't habitually dismiss it away for good, since it re-appears
+   *  whenever the plugin is opened until you've actually moved on. */
+  private renderRetirementBanner(host: HTMLElement): void {
+    if (this.plugin.retirementBannerDismissed) return;
+    const bar = host.createDiv({ cls: "stashpad-retire-banner" });
+    const msg = bar.createSpan({ cls: "stashpad-retire-banner-msg" });
+    msg.createSpan({ cls: "stashpad-retire-banner-tag", text: "Retired" });
+    const link = msg.createEl("a", { cls: "stashpad-retire-banner-link", text: "Switch to Stashpad →" });
+    link.onclick = (e) => { e.preventDefault(); window.open("https://community.obsidian.md/plugins/stashpad"); };
+    const close = bar.createEl("button", { cls: "stashpad-retire-banner-close" });
+    setIcon(close, "x");
+    close.setAttr("aria-label", "Hide for this session");
+    close.onclick = () => { this.plugin.retirementBannerDismissed = true; bar.remove(); };
+  }
+
   private attachLongPress(el: HTMLElement, cb: () => void): void {
     let timer: number | null = null;
     let startX = 0, startY = 0;

@@ -41,8 +41,15 @@ const UNGHOST_FLAG = "stashpad:unghost-after-reload";
 /** A captured file's content, for snapshot-backed undo/redo of file operations. */
 interface FileSnapshot { path: string; binary: boolean; text?: string; data?: ArrayBuffer; }
 
+/** Retirement: the Stashpad community-store page users should switch to. */
+export const RETIREMENT_STORE_URL = "https://community.obsidian.md/plugins/stashpad";
+
 export default class StashpadPlugin extends Plugin {
   settings: StashpadSettings = { ...DEFAULT_SETTINGS };
+  /** Retirement banner (B): hidden for THIS session once the user clicks its ×.
+   *  In-memory only — resets on restart, so the banner returns next launch until
+   *  they've moved to mainline Stashpad. */
+  retirementBannerDismissed = false;
   /** 0.142.5 (ported): dedup-at-creation index — every note id currently in the
    *  vault. Built lazily on the first mintNoteId(), then kept current by the
    *  metadataCache `changed` handler in onload — so minting never scans the vault
@@ -679,6 +686,31 @@ export default class StashpadPlugin extends Plugin {
     this.usedNoteIds = set;
   }
 
+  /** Retirement notice (A). One-time, but only an EXPLICIT action — clicking the
+   *  "Switch to Stashpad" link or "Don't show again" — sets the ack flag. A plain
+   *  dismissal (clicking elsewhere on the toast) re-shows next launch, so a
+   *  habitual close doesn't lose the message. Persistent (never auto-fades). */
+  private maybeShowRetirementNotice(): void {
+    if (this.settings.retirementNoticeAck) return;
+    const frag = document.createDocumentFragment();
+    frag.createEl("div", { text: "Stashpad Classic is retired.", cls: "stashpad-retire-notice-title" });
+    frag.createEl("div", { cls: "stashpad-retire-notice-body", text: "Please switch to Stashpad — it's on the Obsidian community store and has everything Classic has and more." });
+    const row = frag.createEl("div", { cls: "stashpad-retire-notice-actions" });
+    const go = row.createEl("a", { text: "Switch to Stashpad →", cls: "stashpad-retire-notice-link" });
+    const dismiss = row.createEl("a", { text: "Don't show again", cls: "stashpad-retire-notice-dismiss" });
+    const notice = new Notice(frag, 0);
+    go.onclick = (e) => { e.preventDefault(); e.stopPropagation(); window.open(RETIREMENT_STORE_URL); void this.ackRetirement(); notice.hide(); };
+    dismiss.onclick = (e) => { e.preventDefault(); e.stopPropagation(); void this.ackRetirement(); notice.hide(); };
+  }
+
+  /** Persist that the user acknowledged retirement (link click or "Don't show
+   *  again"), so the startup notice never appears again. */
+  async ackRetirement(): Promise<void> {
+    if (this.settings.retirementNoticeAck) return;
+    this.settings.retirementNoticeAck = true;
+    await this.saveSettings();
+  }
+
   async onload(): Promise<void> {
     // 0.142.5 (ported): keep the dedup-at-creation id index current as files are
     // parsed (our own creates AND notes synced in from other devices). Never
@@ -694,6 +726,9 @@ export default class StashpadPlugin extends Plugin {
     await this.migrateLegacyPaths();
     await this.loadSettings();
     perf.enabled = !!this.settings.enablePerfProfiling;
+    // Retirement notice (A): once the workspace is ready, show a one-time
+    // "Classic is retired — switch to Stashpad" notice, unless already acked.
+    this.app.workspace.onLayoutReady(() => this.maybeShowRetirementNotice());
     this.encryption = new EncryptionService(
       this.app,
       // Merge defaults so a settings blob written by an older (v1) version still

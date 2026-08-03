@@ -1,7 +1,7 @@
 {
   "id": "stashpad-classic",
   "name": "Stashpad Classic",
-  "version": "0.102.25",
+  "version": "0.102.26",
   "minAppVersion": "1.7.0",
   "description": "RETIRED — frozen and no longer maintained; switch to Stashpad (now on the community store). Classic was the stable-Obsidian fork of Stashpad, kept working while mainline required Obsidian's insider-only APIs.",
   "author": "Human",

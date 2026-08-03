@@ -4579,3 +4579,47 @@ body.stashpad-folderpanel-resizing { cursor: row-resize; user-select: none; }
 
 /* 0.88.1: by-author select inside the View popover */
 .stashpad-view-author-select { margin-left: 8px; max-width: 160px; font-size: var(--font-ui-smaller); }
+
+/* --- Retirement surfaces (A startup notice + B in-view banner) --- */
+.stashpad-retire-banner {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--background-modifier-error-hover, var(--background-secondary));
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: var(--font-ui-smaller);
+}
+.stashpad-retire-banner-msg { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.stashpad-retire-banner-tag {
+  flex: 0 0 auto;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: var(--font-semibold);
+  color: var(--text-on-accent, var(--text-normal));
+  background: var(--text-error, var(--interactive-accent));
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+.stashpad-retire-banner-link { color: var(--text-accent); cursor: pointer; text-decoration: none; }
+.stashpad-retire-banner-link:hover { text-decoration: underline; }
+.stashpad-retire-banner-close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.stashpad-retire-banner-close:hover { color: var(--text-normal); }
+.stashpad-retire-banner-close .svg-icon { width: 15px; height: 15px; }
+.stashpad-retire-notice-title { font-weight: var(--font-semibold); margin-bottom: 4px; }
+.stashpad-retire-notice-body { margin-bottom: 8px; }
+.stashpad-retire-notice-actions { display: flex; gap: 14px; align-items: center; }
+.stashpad-retire-notice-link { color: var(--text-accent); cursor: pointer; font-weight: var(--font-semibold); }
+.stashpad-retire-notice-dismiss { color: var(--text-muted); cursor: pointer; }
